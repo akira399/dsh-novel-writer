@@ -22,6 +22,7 @@ A web-novel creation plugin for [DeepSeek Harness](https://deepseek-harness.gith
 | **Workshop assistant** | intent parsing (natural language → tool actions) + 5-step creation wizard |
 | **GUI** | sidebar "Novel Workshop" + drawer (projects/create/detail/one-click write/diagnosis/demo import) + settings card |
 | **Revision & export** | proofread/rhythm/style modes (diff stats, original kept); txt/markdown/platform export |
+| **Novel Creation Mode preset** | agent preset ("大肥鱼的小说工坊") selectable when creating a new session — anchors the creation persona and auto-installs the `novel-writing-workflow` skill + 41 `novel_*`/`lorebook_*` tools (three-channel model: preset anchors the mode, skill guides the method, tools enforce the gated workflow). Zero setup: pick it in the new-session preset picker and start chatting ("create a xianxia novel project", "write the next chapter"). |
 
 ## Install
 
