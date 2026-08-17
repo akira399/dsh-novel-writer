@@ -10,7 +10,7 @@
 - 中文 | [English](./README.en.md)
 
 <p align="center">
-  <img src="./assets/brand/logo.svg" alt="大肥鱼的小说工坊 Logo" width="120">
+  <img src="./assets/brand/logo.png" alt="大肥鱼的小说工坊 Logo" width="120">
 </p>
 
 让 DSH 像一位专业的网文编辑与你协同：从选题、设定、人设、大纲到分章、正文、修订、完本，每一步有模板、有门禁、可校验、可回滚；并有世界书把你的设定固化下来，确保百万字不崩设定。
