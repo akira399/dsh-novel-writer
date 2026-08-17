@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="大肥鱼的小说工坊 Logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2E4470"/>
+      <stop offset="0.55" stop-color="#3D5D89"/>
+      <stop offset="1" stop-color="#6DC5F2"/>
+    </linearGradient>
+    <linearGradient id="fish" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EAF6FF"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6DC5F2"/>
+      <stop offset="1" stop-color="#3D5D89"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圆角方块背景 -->
+  <rect x="8" y="8" width="496" height="496" rx="96" fill="url(#bg)"/>
+
+  <!-- 底部波浪 -->
+  <path d="M 60 400 Q 150 360 240 400 T 452 400 V 430 Q 360 470 260 430 T 60 430 Z" fill="#2E4470" opacity="0.35"/>
+
+  <!-- 气泡 -->
+  <circle cx="120" cy="150" r="14" fill="none" stroke="#CFE8FF" stroke-width="6" opacity="0.8"/>
+  <circle cx="140" cy="120" r="7" fill="#CFE8FF" opacity="0.7"/>
+  <circle cx="380" cy="180" r="10" fill="none" stroke="#CFE8FF" stroke-width="5" opacity="0.7"/>
+
+  <!-- 鱼身（大肥鱼胖身体） -->
+  <ellipse cx="256" cy="300" rx="150" ry="120" fill="url(#fish)" stroke="#2E4470" stroke-width="7"/>
+
+  <!-- 尾鳍 -->
+  <path d="M 398 300 Q 470 250 468 330 Q 470 380 402 350 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- 背鳍 -->
+  <path d="M 300 185 Q 336 140 360 200 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- 胸鳍 -->
+  <path d="M 190 330 Q 150 300 160 360 Q 172 392 210 372 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M 322 330 Q 362 300 352 360 Q 340 392 302 372 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- 眼睛 -->
+  <ellipse cx="196" cy="275" rx="30" ry="36" fill="#FFFFFF" stroke="#2E4470" stroke-width="6"/>
+  <ellipse cx="316" cy="275" rx="30" ry="36" fill="#FFFFFF" stroke="#2E4470" stroke-width="6"/>
+  <circle cx="202" cy="277" r="15" fill="#2E4470"/>
+  <circle cx="322" cy="277" r="15" fill="#2E4470"/>
+  <circle cx="207" cy="271" r="5" fill="#FFFFFF"/>
+  <circle cx="327" cy="271" r="5" fill="#FFFFFF"/>
+
+  <!-- 腮红 -->
+  <ellipse cx="150" cy="330" rx="22" ry="14" fill="#FFB6C1" opacity="0.85"/>
+  <ellipse cx="362" cy="330" rx="22" ry="14" fill="#FFB6C1" opacity="0.85"/>
+
+  <!-- 嘴（微笑） -->
+  <path d="M 235 345 Q 256 368 277 345" fill="none" stroke="#2E4470" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 头顶小恶魔角（呼应参考图萌点） -->
+  <path d="M 196 205 Q 178 168 206 150 Q 188 172 200 205 Z" fill="#2E4470"/>
+  <path d="M 316 205 Q 334 168 306 150 Q 324 172 312 205 Z" fill="#2E4470"/>
+
+  <!-- 头顶小鲸鱼喷水（品牌记忆点） -->
+  <ellipse cx="96" cy="120" rx="34" ry="24" fill="#3D5D89" stroke="#CFE8FF" stroke-width="4"/>
+  <circle cx="72" cy="100" r="6" fill="#6DC5F2"/>
+  <circle cx="96" cy="100" r="7" fill="#6DC5F2"/>
+  <circle cx="118" cy="100" r="6" fill="#6DC5F2"/>
+</svg>

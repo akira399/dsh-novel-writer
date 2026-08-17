@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-label="大肥鱼的小说工坊 — DSH 网络小说创作插件封面">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#243A61"/>
+      <stop offset="0.5" stop-color="#3D5D89"/>
+      <stop offset="1" stop-color="#6DC5F2"/>
+    </linearGradient>
+    <linearGradient id="fishBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DCF1FF"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7FD0FF"/>
+      <stop offset="1" stop-color="#3D5D89"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="1200" height="360" fill="url(#bg)"/>
+
+  <!-- 背景波浪装饰 -->
+  <path d="M 0 300 Q 150 260 300 300 T 600 300 T 900 300 T 1200 300 V 360 H 0 Z" fill="#1E3156" opacity="0.45"/>
+  <path d="M 0 330 Q 160 295 320 330 T 640 330 T 960 330 T 1200 330 V 360 H 0 Z" fill="#182A4C" opacity="0.5"/>
+
+  <!-- 浮游气泡 -->
+  <circle cx="180" cy="110" r="13" fill="none" stroke="#CFE8FF" stroke-width="5" opacity="0.7"/>
+  <circle cx="208" cy="80" r="7" fill="#CFE8FF" opacity="0.6"/>
+  <circle cx="1010" cy="120" r="9" fill="none" stroke="#CFE8FF" stroke-width="4" opacity="0.6"/>
+  <circle cx="1000" cy="70" r="6" fill="#CFE8FF" opacity="0.5"/>
+
+  <!-- 左侧大胖鱼 -->
+  <g transform="translate(30,10)">
+    <!-- 尾鳍 -->
+    <path d="M 180 220 Q 250 175 248 250 Q 250 302 184 272 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="6" stroke-linejoin="round"/>
+    <!-- 背鳍 -->
+    <path d="M 96 138 Q 128 96 150 152 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="5" stroke-linejoin="round"/>
+    <!-- 胸鳍 -->
+    <path d="M 30 250 Q -4 224 4 276 Q 14 302 48 284 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M 140 250 Q 174 224 164 276 Q 154 302 120 284 Z" fill="url(#fin)" stroke="#2E4470" stroke-width="5" stroke-linejoin="round"/>
+    <!-- 身体 -->
+    <ellipse cx="95" cy="220" rx="118" ry="96" fill="url(#fishBody)" stroke="#2E4470" stroke-width="6"/>
+    <!-- 眼睛 -->
+    <ellipse cx="52" cy="200" rx="24" ry="28" fill="#fff" stroke="#2E4470" stroke-width="5"/>
+    <ellipse cx="150" cy="200" rx="24" ry="28" fill="#fff" stroke="#2E4470" stroke-width="5"/>
+    <circle cx="58" cy="203" r="12" fill="#2E4470"/>
+    <circle cx="156" cy="203" r="12" fill="#2E4470"/>
+    <circle cx="62" cy="198" r="4" fill="#fff"/>
+    <circle cx="160" cy="198" r="4" fill="#fff"/>
+    <!-- 腮红 -->
+    <ellipse cx="18" cy="244" rx="17" ry="11" fill="#FFB6C1" opacity="0.85"/>
+    <ellipse cx="172" cy="244" rx="17" ry="11" fill="#FFB6C1" opacity="0.85"/>
+    <!-- 嘴 -->
+    <path d="M 78 266 Q 96 284 114 266" fill="none" stroke="#2E4470" stroke-width="6" stroke-linecap="round"/>
+    <!-- 头顶恶魔角 -->
+    <path d="M 52 156 Q 36 122 62 106 Q 46 126 56 156 Z" fill="#2E4470"/>
+    <path d="M 138 156 Q 154 122 128 106 Q 144 126 134 156 Z" fill="#2E4470"/>
+  </g>
+
+  <!-- 右侧文字 -->
+  <g transform="translate(420,0)">
+    <text x="0" y="120" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="76" font-weight="700" fill="#FFFFFF" letter-spacing="2">大肥鱼的小说工坊</text>
+    <text x="0" y="176" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="30" fill="#CFE8FF" letter-spacing="1">DeepSeek Harness · 网络小说创作插件</text>
+    <text x="0" y="228" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="20" fill="#9FCBEC" letter-spacing="1">九阶段门禁式创作 · 世界书设定注入 · AI 一键润色 · 百万字一致性</text>
+  </g>
+</svg>

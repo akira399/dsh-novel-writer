@@ -1,9 +1,17 @@
+<p align="center">
+  <img src="./assets/brand/banner.svg" alt="大肥鱼的小说工坊 — DSH 网络小说创作插件" width="100%">
+</p>
+
 # 大肥鱼的小说工坊（dsh-novel-writer）
 
 一个面向 [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart)（DSH）的网络小说创作插件：
 **九阶段门禁式创作流程 + 世界书（lorebook）设定注入 + 本地书籍导入 + AI 一键润色 + 去 AI 味 + 黄金三章诊断 + 百万字一致性保障**。
 
 - 中文 | [English](./README.en.md)
+
+<p align="center">
+  <img src="./assets/brand/logo.svg" alt="大肥鱼的小说工坊 Logo" width="120">
+</p>
 
 让 DSH 像一位专业的网文编辑与你协同：从选题、设定、人设、大纲到分章、正文、修订、完本，每一步有模板、有门禁、可校验、可回滚；并有世界书把你的设定固化下来，确保百万字不崩设定。
 
