@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "data": [
+    {
+      "id": "wg_demo_core",
+      "name": "核心设定（常驻）",
+      "entry_ids": ["wb_demo_linyuan", "wb_demo_qingyun", "wb_demo_zhuji", "wb_demo_jinshou"],
+      "book_ids": ["bk_demo"],
+      "enabled": true,
+      "created_at": "2026-08-16T00:00:00.000Z",
+      "updated_at": "2026-08-16T00:00:00.000Z"
+    }
+  ]
+}

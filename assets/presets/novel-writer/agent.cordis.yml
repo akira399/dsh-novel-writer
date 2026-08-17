@@ -1,0 +1,3 @@
+# 小说创作模式 — agent 组合（组合为空：工具面由插件 host 注册，方法指导在 novel-writing-workflow 技能）。
+# 预设仅提供 persona 名称/描述与目录身份（novel-writer），供新建会话选择。
+[]

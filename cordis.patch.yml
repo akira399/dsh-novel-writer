@@ -1,0 +1,8 @@
+# dsh-novel-writer bundle patch: inserts the host plugin row into the profile
+# roster. Applied as a profile bundle layer (the `dsh.bundle.patch` manifest
+# field). The row is a bare plugin by package name: the node half (exports
+# ".") runs in the host process; the browser half (exports "./client") is
+# declared via the `dsh.client` manifest field.
+- insert:
+    - id: dsh-novel-writer
+      name: '@dsh-external/dsh-novel-writer'
