@@ -106,7 +106,7 @@
 
 ## 📦 安装
 
-> **准备好这些就能开始**：一台装好 **DeepSeek Harness（DSH）** 的电脑（[DSH 快速上手](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart)）、一个能打开「终端 / 命令提示符」的入口即可。版本不挑系统，Windows / macOS / Linux 都支持。
+> **准备好这些就能开始**：一台装好 **DeepSeek Harness（DSH）** 的电脑（[DSH 快速上手](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart)）、一个能打开「终端 / 命令提示符」的入口即可。版本不挑系统，Windows / macOS / Linux 都支持；运行时需 **Node.js ≥ 18**（发布包为已编译产物，无需你构建）。
 
 ### ✅ 方式一：一句话让 AI 替你装（小白首选）
 
@@ -154,7 +154,7 @@
 
 ### 🛠 方式三：从源码构建安装（进阶）
 
-适合想改源码 / 参与开发的人。需要先装有 **Node.js ≥ 20** 与 **Git**。
+适合想改源码 / 参与开发的人。需要先装有 **Node.js ≥ 22**（构建 toolchain 用较新 Node；仅使用发布包则 ≥18 即可）与 **Git**。
 
 ```bash
 git clone https://github.com/akira399/dsh-novel-writer.git

@@ -56,7 +56,8 @@ If `dsh` is "not found", make sure DSH is installed and `dsh` is on PATH. On a "
 
 ### Option C — Build from source (advanced)
 
-Requires **Node.js ≥ 20** and **Git**:
+> Runtime requires **Node.js ≥ 18** (release tarball is prebuilt — no build needed).
+> Building from source requires **Node.js ≥ 22** and **Git**:
 
 ```bash
 git clone https://github.com/akira399/dsh-novel-writer.git
