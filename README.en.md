@@ -80,6 +80,24 @@ After any install method: the sidebar "大肥鱼的小说工坊" entry, the sett
 
 Data lives in `~/.dsh/dsh-novel-writer/` by default.
 
+## Feature usage guide
+
+Every capability is reachable two ways — the GUI drawer and plain chat. Example triggers:
+
+- **Create a book**: drawer "create" + pick a genre (27) · chat: "create a xianxia novel project"
+- **Walk the 9 phases**: chat "generate the worldbuilding", "design the characters", "submit the outline" → `novel_phase` / `novel_commit`
+- **Write a chapter**: drawer "一键写章并保存" · chat: "write the next chapter"
+- **Polish + diff**: drawer "一键润色" → review marked changes → 确认保存 / 放弃还原; undo with the "↶ 撤销" button
+- **Worldbook (lorebook)**: drawer "本书世界书" → "AI 一键生成设定" or "+ 新建条目"; import Operit/SillyTavern/character-card
+- **Import a local book**: drawer "导入本地书籍" (txt/md) → auto-chapters & builds a book
+- **Quality checks**: drawer "结构诊断"; chat "把这章去 AI 味", "校验这章" → `novel_validate`
+- **Consistency**: chat "跑一遍一致性巡检" → `novel_consistency_audit`; "林远现在什么境界" → `novel_ledger`; foreshadow/timeline via chat
+- **Revise & export**: chat "修订第 3 章查错别字" → `novel_revise`; drawer "导出 txt" or chat "导出成稿"
+- **Market research & clone**: chat "调研下仙侠市场" → `novel_market_research`; "以《青云问道》做模板开新书" → `novel_clone_project`
+- **Start a session**: new session → preset picker → "大肥鱼的小说工坊" → just chat your intent
+
+Tip: you don't need to memorize commands — the creation-mode agent picks the right `novel_*`/`lorebook_*` tool for you and asks for confirmation on writes. Ask "what can the workshop do?" anytime.
+
 ## Interaction with DSH
 
 - **41 agent tools**: `novel_*` + `lorebook_*` + `novel_prompts`
