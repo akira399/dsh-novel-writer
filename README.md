@@ -67,7 +67,7 @@
 - 内置 60 个提示词模板（创作/文风 8 套/去味/润色/诊断/引导/世界书），`novel_prompts` 可浏览渲染
 
 <p align="center">
-  <img src="./assets/screenshots/shot-gui.png" alt="DSH 主界面（大肥鱼的小说工坊工作空间）" width="720">
+  <img src="./assets/screenshots/shot-presets.png" alt="大肥鱼的小说工坊工作台（项目面板）" width="720">
 </p>
 
 ### 🎭 小说创作模式预设（agent 预设）
@@ -86,7 +86,7 @@
 **使用方式**：新建会话 → 预设选择器选「大肥鱼的小说工坊」→ 直接开始创作；或安装后自动同步到本地 `~/.dsh/.agent-presets/novel-writer/`（升级插件自动更新）。
 
 <p align="center">
-  <img src="./assets/screenshots/shot-presets.png" alt="创作模式预设（对话驱动 + 工坊工作台）" width="820">
+  <img src="./assets/screenshots/shot-gui.png" alt="DSH 主界面（大肥鱼的小说工坊预设工作空间）" width="820">
 </p>
 
 ---
