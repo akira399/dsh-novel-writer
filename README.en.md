@@ -26,18 +26,51 @@ A web-novel creation plugin for [DeepSeek Harness](https://deepseek-harness.gith
 
 ## Install
 
+> Prerequisites: a machine with **DeepSeek Harness (DSH)** installed and a terminal.
+> Works on Windows / macOS / Linux.
+
+### Option A — Let an AI install it (easiest)
+
+If your AI assistant can run commands, paste this into it:
+
+> **Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer) and confirm it is enabled. Steps:**
+> **1) Download**: get `https://github.com/akira399/dsh-novel-writer/releases/download/v0.1.1/dsh-external-dsh-novel-writer-0.1.1.tgz` (a prebuilt `.tgz`, no build needed). If unavailable, open `https://github.com/akira399/dsh-novel-writer/releases` and grab the latest `dsh-external-dsh-novel-writer-*.tgz`.**
+> **2) Install**: run `dsh plugin --profile web add <absolute path to that tgz>`.**
+> **3) Verify**: run `dsh plugin list` and confirm `dsh-novel-writer` is listed & enabled.**
+> **4) Remind the user**: refresh the DSH web page (Ctrl+Shift+R), and the sidebar entry "大肥鱼的小说工坊" should appear.**
+> **On any permission/network error, report the exact error first — do not silently skip.**
+
+### Option B — Manual install from Release
+
 ```bash
-dsh plugin --profile web add <dsh-novel-writer-0.0.1.tgz>
+# 1) Download dsh-external-dsh-novel-writer-0.1.1.tgz from
+#    https://github.com/akira399/dsh-novel-writer/releases
+#    (pick the .tgz whose name starts with "dsh-external-", not Source code archives)
+# 2) Open a terminal (PowerShell on Windows / Terminal on macOS / any on Linux)
+dsh plugin --profile web add <path-to-downloaded-tgz>
+# 3) Confirm
+dsh plugin list
 ```
 
-Or from this repo:
+If `dsh` is "not found", make sure DSH is installed and `dsh` is on PATH. On a "permission denied" error, run the terminal as administrator (Windows) or prefix with `sudo` (macOS/Linux).
+
+### Option C — Build from source (advanced)
+
+Requires **Node.js ≥ 20** and **Git**:
 
 ```bash
-npm install && npm run verify && npm run build
-dsh plugin --profile web add <path>
+git clone https://github.com/akira399/dsh-novel-writer.git
+cd dsh-novel-writer
+npm install
+npm run verify          # typecheck + 291 tests + build
+npm run build
+npm pack                # produces dsh-external-dsh-novel-writer-0.1.1.tgz
+dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.1.tgz
 ```
 
-After install: sidebar "Novel Workshop" entry, settings card, the `novel-writing-workflow` skill, and the "Novel Creation Mode" agent preset become available.
+> On Windows the build script is Shell — use Git Bash if `bash` is missing.
+
+After any install method: the sidebar "大肥鱼的小说工坊" entry, the settings card, the `novel-writing-workflow` skill, and the "大肥鱼的小说工坊" agent preset (new-session mode picker) all become available.
 
 ## Quick start
 
