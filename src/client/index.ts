@@ -40,10 +40,14 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.slots.inject('settings.plugin.item', () =>
     ctx.slots.register({
       name: 'settings.plugin.item',
+      // 同时提供 id 与 key：不同宿主版本把该 slot 声明为 "list"（用 id）或 "keyed"（用 key），
+      // 带两者可兼容两种环境，避免 "keyed slot requires options.key" 加载报错。
+      // （类型按本机 list 声明走；运行时额外的 key 由 cast 绕过 list-only 类型约束）
       id: '@dsh-external/dsh-novel-writer',
+      key: '@dsh-external/dsh-novel-writer',
       order: 110,
       label: () => '大肥鱼的小说工坊',
-    }, () => React.createElement(NovelSettingsCard, { scope })),
+    } as never, () => React.createElement(NovelSettingsCard, { scope })),
   ), '@dsh-external/dsh-novel-writer: settings card')
 
   // 侧边栏入口 + 工作台抽屉（DOM 级，自愈注入；一键写章走 host LLM 直写自动保存）
