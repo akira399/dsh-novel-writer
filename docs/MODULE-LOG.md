@@ -739,3 +739,16 @@
 - `settings-card.tsx`：`uiHidden` 读写 localStorage；当 host settings `unavailable` 时**降级渲染**（标题 + 隐藏开关 + 说明），不再只报错；ready 时照常显示启用/数据目录 + host 同步。
 - `client/index.ts`：`ensureEntry` 改读 `readUiHidden()`（localStorage）；监听自定义事件 + host settings scope（host 的 uiHidden 变化也同步到 localStorage）即时增删侧边栏入口。
 **验收**：typecheck 0 错误；`npm test` 299/299；build 全绿；热重载生效。
+
+## 模块 17：一键润色重构式润色 + 段落级逐条采纳（多轮迭代）
+
+**日期**：2026-08-17
+**背景**：真实用户对润色质量/广度的持续反馈迭代——①润色应"整句重构、大胆扩写"，非只换同义词；②长章曾被 maxTokens 截断成"只改开头"；③模型曾原样返回→0 建议；④段落错配（改后=下一段）；⑤希望新增内容可采纳；⑥原文视图随采纳热更新。
+**范围**：
+- **重构式润色模板** `polish-literary.md`：明确"整句重写/句与句重组/大幅扩写(可新增细节段)/允许调整段落排布"，三底线仅限情节走向/人物设定/世界观；配重构幅度示例。
+- **maxTokens 动态放大**（routes.ts polish）：按原文长度 `min(12000, max(6000, len*1.6+2500))`，防长章润色被截断。
+- **host 自动重试**：润色返回后 `splitPolishSuggestions` 检测 0 建议（模型原样返回）→ 用"强制重写"指令自动重试一次。
+- **段落级建议重构**（diff.ts）：标准 LCS 回溯在段落 token 上对齐；原段数==润色段数时逐对配对，否则整体"删旧+增新"——**绝不跨段错配**；`PolishSuggestion` 增 `insertAfter`，`applyPolishSuggestions` 支持新增段插入、删除段删除。
+- **原文视图热更新**（client）：DiffPreviewV 顶部原文随 `polishSuggestions` 实时渲染——已采纳段立即显示润色文并标绿（✔已采纳），新增段实时插入（＋新增），取消立即恢复。
+- 测试：diff 相关 21→**23 例**（含段落错配回归、新增段插入）；全量 303。
+**验收**：`npm run verify` 全绿（303 测试 + typecheck + build）；用户实测确认（"好多没问题了"）。

@@ -354,7 +354,23 @@ export function registerNovelRoutes(ctx: Context, assembly: NovelAssembly): void
             const template = library.find((t) => t.id === 'polish-literary')
             if (!template) return fail(res, 500, 'IO_FAILURE', '缺少润色提示词模板')
             const prompt = renderPromptTemplate(template, { text })
-            const polished = await svc.llm.complete('你是资深网文编辑，只输出润色后的完整正文，不要任何解释或前缀。', prompt, 6000)
+            // 润色需输出与原文等长的全篇正文：输出预算按原文长度动态放大，
+            // 防止长章节被 maxTokens 截断（截断会导致"只改了开头几段"）。
+            const maxTokens = Math.min(12000, Math.max(6000, Math.ceil(text.length * 1.6) + 2500))
+            let polished = await svc.llm.complete('你是资深网文编辑，只输出润色后的完整正文，不要任何解释或前缀。', prompt, maxTokens)
+
+            // 模型原样返回（无任何实质改动）→ 自动用更强的"强制重写"指令重试一次，
+            // 保证用户至少得到有实质内容的润色建议。
+            if (polished) {
+              const { splitPolishSuggestions } = await import('./core/polish/diff.js')
+              if (splitPolishSuggestions(text, polished).length === 0) {
+                const retryPrompt = '你上一版把原文原样返回了，这不可接受！请按以下要求重新润色：' +
+                  '\n- 对全章几乎每一段都必须做明显的文笔重写（换词、改句、调序、扩写、压缩都行）' +
+                  '\n- 底线只是不改情节/设定/人物行为逻辑，表达层面要大改特改' +
+                  '\n- 输出与原文的差异必须遍布全章，禁止与原文相同或近似相同\n\n' + prompt
+                polished = await svc.llm.complete('你是资深网文编辑。上一次你原样返回了原文，这次必须充分重写并输出润色后的完整正文。', retryPrompt, maxTokens)
+              }
+            }
             if (!polished) return fail(res, 500, 'IO_FAILURE', '模型未返回润色结果')
             writeJson(res, 200, { ok: true, value: { original: text, polished } })
           } catch (error) {

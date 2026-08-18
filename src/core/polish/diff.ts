@@ -123,77 +123,150 @@ export function diffChars(original: string, polished: string): DiffChunk[] {
   return chunks
 }
 
-/** 一条可独立采纳/拒绝的润色改动建议。 */
+/** 一条可独立采纳/拒绝的润色改动建议（段落级：一条 = 原文一个段落 → 润色后段落）。 */
 export interface PolishSuggestion {
   id: string
-  /** 原句片段（被改动的原文）。 */
+  /** 原段落文本（被改动的原文段落；新增段为空）。 */
   original: string
-  /** 润色后片段（采纳后替换进正文）。 */
+  /** 润色后段落（采纳后替换进正文；删除段为空）。 */
   polished: string
-  /** 在 original 全文中的起止下标（重组用）。 */
+  /** 该段落在 original 全文中的起止下标（重组用）。 */
   start: number
   end: number
+  /** 原段落号（1-based，用于"点击建议定位到对应原文段落"）。 */
+  paraIndex: number
+  /** 纯新增段：插入到原段号 insertAfter 之后（0 = 全文开头前）。 */
+  insertAfter?: number
   /** 是否采纳（默认未采纳——用户逐条决定）。 */
   accepted: boolean
 }
 
+/** 按空行/换行把文本切成非空段落，并记录每个段落在原文中的 [start,end)。 */
+export function paragraphSpans(text: string): Array<{ text: string; start: number; end: number }> {
+  const spans: Array<{ text: string; start: number; end: number }> = []
+  const source = String(text ?? '')
+  const re = /[^\n]+/g
+  let match: RegExpExecArray | null
+  while ((match = re.exec(source)) !== null) {
+    const t = match[0]
+    const start = match.index
+    const end = start + t.length
+    if (t.trim()) spans.push({ text: t, start, end })
+  }
+  return spans
+}
+
 /**
- * 把「原文 vs 润色文」拆成多条建议：用句子级 diff 把每个 替换/插入/删除
- * 区段抽成一条（含在原文字中的位置）。同句多个改动会各自成条或合并成一条
- * 建议（句子级粒度，便于"这句要不要"）。
+ * 把「原文 vs 润色文」拆成**段落级**建议（每条建议 = 一个被改动的原段 → 对应润色段）：
+ * 用标准 LCS 回溯在"段落 token"上对齐（相同段=same），未对齐的连续区段内
+ * **一对一配对**（只取 min(原段数, 润色段数)），多余者作为删除/新增段——
+ * 保证每条建议的 original/polished **内容一定对应**，绝不跨段错配。
  */
 export function splitPolishSuggestions(original: string, polished: string): PolishSuggestion[] {
-  const chunks = diffSentences(original, polished)
+  const p = paragraphSpans(original)
+  const q = paragraphSpans(polished)
+  const n = p.length
+  const m = q.length
   const suggestions: PolishSuggestion[] = []
-  let origOffset = 0
-  let index = 0
-  while (index < chunks.length) {
-    const chunk = chunks[index]!
-    if (chunk.type === 'same') {
-      origOffset += chunk.text.length
-      index += 1
-      continue
+
+  // 段落 token 上的标准 LCS
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0))
+  for (let i = n - 1; i >= 0; i -= 1) {
+    for (let j = m - 1; j >= 0; j -= 1) {
+      dp[i]![j] = p[i]!.text === q[j]!.text ? dp[i + 1]![j + 1]! + 1 : Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!)
     }
-    // 收集一个非-same 区段：可能 del(+add) 连续，或纯 add，或纯 del
-    let delText = ''
-    let addText = ''
-    const start = origOffset
-    let origConsumed = 0
-    while (index < chunks.length && chunks[index]!.type !== 'same') {
-      const c = chunks[index]!
-      if (c.type === 'del') { delText += c.text; origConsumed += c.text.length }
-      else if (c.type === 'add') addText += c.text
-      index += 1
-    }
-    // 跳过仍在原文本中的锚点对齐（add 不消耗 original）——这段在 original 中占 [start, start+origConsumed)
+  }
+
+  const delRun: number[] = [] // 待配对的"原段"下标
+  const addRun: number[] = [] // 待配对的"润色段"下标
+  // 最近已"定稿"的原段下标（0-based，-1=尚未出现任何原段）——给新增段定插入锚点
+  let lastFixed = -1
+  const make = (pi: number, qi: number): void => {
+    const sp = pi >= 0 && pi < n ? p[pi] : undefined
+    const sq = qi >= 0 && qi < m ? q[qi] : undefined
+    if (!sp && !sq) return
+    const isInsert = !sp && !!sq
     suggestions.push({
       id: `s${suggestions.length + 1}`,
-      original: delText,
-      polished: addText,
-      start,
-      end: start + origConsumed,
+      original: sp?.text ?? '',
+      polished: sq?.text ?? '',
+      start: sp?.start ?? (sq ? sq.start : 0),
+      end: sp?.end ?? (sp ? sp.end : (sq ? sq.end : 0)),
+      paraIndex: sp ? pi + 1 : qi + 1,
+      // 纯新增段：插入到最近定稿的原段之后（0=全文开头前）
+      ...(isInsert ? { insertAfter: lastFixed + 1 } : {}),
       accepted: false,
     })
-    origOffset = start + origConsumed
   }
+  // 结算一个改动区段：
+  //  - 原段数==润色段数 → 逐段一一配对（替换）
+  //  - 段数不一致（合并/拆分/增删）→ 不逐段错配，原区段整体删除 + 润色区段整体新增
+  //    （宁可显示为"删旧增新"，也绝不把 A 段内容配给 B 段，避免误导用户）
+  const flush = (): void => {
+    if (delRun.length === addRun.length && delRun.length > 0) {
+      for (let k = 0; k < delRun.length; k += 1) make(delRun[k]!, addRun[k]!)
+    } else {
+      for (const pi of delRun) make(pi, -1)
+      for (const qi of addRun) make(-1, qi)
+    }
+    // 本改动区段消费过的原段，作为后续新增段的锚点
+    for (const pi of delRun) lastFixed = Math.max(lastFixed, pi)
+    delRun.length = 0
+    addRun.length = 0
+  }
+
+  let i = 0
+  let j = 0
+  while (i < n || j < m) {
+    if (i < n && j < m && p[i]!.text === q[j]!.text) {
+      flush()
+      lastFixed = i
+      i += 1
+      j += 1
+    } else if (j < m && (i >= n || dp[i]![j + 1]! >= dp[i + 1]![j]!)) {
+      addRun.push(j)
+      j += 1
+    } else {
+      delRun.push(i)
+      i += 1
+    }
+  }
+  flush()
   return suggestions
 }
 
 /**
- * 按采纳状态把建议重组回正文：把 original 中每条已采纳建议的 [start,end)
- * 片段替换为其 polished 文本；未采纳的保持原文。按位置从后往前替换防下标错位。
+ * 按采纳状态把建议重组回正文：
+ *  1) 有原段的建议 → 将 original 中 [start,end) 替换为 polished（替换/删除段）；
+ *  2) 纯新增段建议（original 空、含 insertAfter）→ 插入到第 insertAfter 段之后（0=开头前）。
+ * 未采纳的保持原文。按位置从后往前应用防下标错位。
  */
 export function applyPolishSuggestions(original: string, suggestions: readonly PolishSuggestion[]): string {
-  const accepted = suggestions
-    .filter((s) => s.accepted && s.polished.length > 0)
+  // 替换/删除（基于原 span 位置）
+  const replacements = suggestions
+    .filter((s) => s.accepted && s.original.length > 0)
     .slice()
-    .sort((a, b) => b.start - a.start) // 从后往前替换
+    .sort((a, b) => b.start - a.start)
   let result = original
-  for (const s of accepted) {
+  for (const s of replacements) {
     const start = Math.max(0, s.start)
     const end = Math.min(result.length, s.end)
-    // 替换区间 [start,end)；纯插入（end===start）也允许（在 start 处插入）
+    if (end < start) continue
     result = result.slice(0, start) + s.polished + result.slice(end)
+  }
+  // 新增段插入（锚点基于替换后的 result 重新取段界，防错位）
+  const inserts = suggestions
+    .filter((s) => s.accepted && s.original.length === 0 && s.polished.length > 0 && s.insertAfter !== undefined)
+    .slice()
+    .sort((a, b) => (b.insertAfter ?? 0) - (a.insertAfter ?? 0))
+  if (inserts.length > 0) {
+    const spans = paragraphSpans(result)
+    for (const s of inserts) {
+      const at = (s.insertAfter ?? 0) >= 1 && spans[(s.insertAfter ?? 1) - 1]
+        ? spans[(s.insertAfter ?? 1) - 1]!.end
+        : 0
+      result = result.slice(0, at) + (at > 0 ? '\n\n' : '') + s.polished + result.slice(at)
+    }
   }
   return result
 }

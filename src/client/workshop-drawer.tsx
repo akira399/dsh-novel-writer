@@ -10,7 +10,7 @@
  */
 import React from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { diffSentences, diffChars, countDiffChanges, splitPolishSuggestions, applyPolishSuggestions, type DiffChunk, type PolishSuggestion } from '../core/polish/diff.ts'
+import { diffSentences, diffChars, countDiffChanges, splitPolishSuggestions, applyPolishSuggestions, paragraphSpans, type DiffChunk, type PolishSuggestion } from '../core/polish/diff.ts'
 import { drawerSize } from '../core/drawer-size.ts'
 import { GENRES, genreLabel, type GenreOption } from '../core/genres.ts'
 
@@ -217,16 +217,24 @@ function DiagnosePanelV(state: DrawerState): React.ReactNode {
   )
 }
 
-/** 字级 diff 渲染：把一段文本按 diffChars 拆成 同/删/增 内联片段。 */
-function CharDiffV(original: string, polished: string, accent: 'warmer' | 'blue'): React.ReactNode {
+/**
+ * 字级 diff 渲染。
+ *  view='original'：按原文视角，删除线标出"被删/被换掉的原字"（不含新字）
+ *  view='polished'：按润色视角，黄/蓝底标出"新增/改后的字"（不含被删的原字）
+ *  view='both'：两者合并（一般不用）
+ */
+function CharDiffV(original: string, polished: string, view: 'original' | 'polished' | 'both', accent: 'warmer' | 'blue'): React.ReactNode {
   const chunks = diffChars(original, polished)
   return React.createElement('span', {},
     chunks.map((chunk, index) => {
       if (chunk.type === 'same') return React.createElement('span', { key: index }, chunk.text)
       if (chunk.type === 'del') {
+        // 仅原文视图（或合并视图）显示删除线
+        if (view === 'polished') return null
         return React.createElement('span', { key: index, style: { background: '#fdd', color: '#a33', textDecoration: 'line-through', borderRadius: '2px' } }, chunk.text)
       }
-      // add
+      // add：仅润色视图（或合并视图）显示高亮
+      if (view === 'original') return null
       const blue = accent === 'blue'
       return React.createElement('span', {
         key: index,
@@ -252,7 +260,7 @@ function DiffPreviewV(state: DrawerState): React.ReactNode {
   const suggestionCard = (s: PolishSuggestion): React.ReactNode => {
     const isIns = s.original === ''
     const isDel = s.polished === ''
-    const title = isIns ? '（新增）' : isDel ? '（删除）' : `建议 ${s.id}`
+    const title = isIns ? '（新增段）' : isDel ? '（删除段）' : `建议 ${s.id} · 第 ${s.paraIndex} 段`
     return React.createElement('div', {
       key: s.id,
       style: {
@@ -261,6 +269,11 @@ function DiffPreviewV(state: DrawerState): React.ReactNode {
       },
     },
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' } },
+        React.createElement('button', {
+          'data-action': 'polish-locate', 'data-id': s.id,
+          title: '滚动定位到对应的原文段落',
+          style: { ...buttonStyle, fontSize: '11px', padding: '1px 6px', color: '#156', borderColor: '#29a' },
+        }, '📍 定位'),
         React.createElement('span', { style: { fontWeight: 600, fontSize: '12px', color: s.accepted ? '#2a7' : '#666' } }, title),
         React.createElement('span', { style: { marginLeft: 'auto', fontSize: '12px' } },
           React.createElement('button', {
@@ -272,11 +285,11 @@ function DiffPreviewV(state: DrawerState): React.ReactNode {
       // 原文 → 润色（字级标亮具体改了哪几个字）
       s.original.length > 0
         ? React.createElement('div', { style: { fontSize: '12px', lineHeight: 1.6, color: '#555', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
-          '原文：', CharDiffV(s.original, s.polished, 'blue'))
+          '原文：', CharDiffV(s.original, s.polished, 'original', 'blue'))
         : null,
       s.polished.length > 0
         ? React.createElement('div', { style: { fontSize: '12px', lineHeight: 1.6, color: '#155', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
-          '改后：', CharDiffV(s.original, s.polished, 'warmer'))
+          '改后：', CharDiffV(s.original, s.polished, 'polished', 'warmer'))
         : null,
     )
   }
@@ -285,16 +298,74 @@ function DiffPreviewV(state: DrawerState): React.ReactNode {
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
       React.createElement('span', { style: { fontWeight: 700, fontSize: '13px' } }, '润色预览'),
       React.createElement('span', { style: { fontSize: '11px', color: '#888' } },
-        `共 ${suggestions.length} 条建议 · 已采纳 ${acceptedCount} 条（每条可单独采纳；删除线=删除，黄底/蓝底=新增/改动字）`),
+        `共 ${suggestions.length} 条建议 · 已采纳 ${acceptedCount} 条（每条可单独采纳；点「📍定位」跳到对应原文段落）`),
     ),
+    // 原文定位视图：随采纳状态热更新——已采纳的段立即显示润色文并标记，取消则恢复原文
+    suggestions.length > 0
+      ? React.createElement('div', {
+        id: 'polish-original-view',
+        style: {
+          maxHeight: 120, overflowY: 'auto', border: '1px solid #eee', borderRadius: '6px',
+          padding: '6px 8px', background: '#fff', fontSize: '12px', lineHeight: 1.6, color: '#444',
+        },
+      },
+        React.createElement('div', { style: { fontSize: '11px', color: '#999', fontWeight: 600, marginBottom: '2px' } }, '原文（采纳即预览在此改动）'),
+        (() => {
+          // 已采纳：按原段号 → 润色文（替换建议）；已采纳新增段按其 insertAfter 锚点段展示
+          const replByPara = new Map<number, string>()
+          const insertsByPara = new Map<number, string[]>()
+          for (const s of suggestions) {
+            if (!s.accepted) continue
+            if (s.original.length > 0 && s.polished.length > 0) replByPara.set(s.paraIndex, s.polished)
+            else if (s.original.length === 0 && s.polished.length > 0 && s.insertAfter !== undefined) {
+              const list = insertsByPara.get(s.insertAfter) ?? []
+              list.push(s.polished)
+              insertsByPara.set(s.insertAfter, list)
+            }
+          }
+          const paras = paragraphSpans(preview.original)
+          return paras.map((sp, idx) => {
+            const paraNo = idx + 1
+            const repl = replByPara.get(paraNo)
+            const ins = insertsByPara.get(paraNo) ?? []
+            return React.createElement('div', { key: idx, style: { padding: '1px 0' } },
+              React.createElement('div', {
+                'data-para-idx': String(paraNo),
+                style: {
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                  background: repl ? '#e8f7ee' : undefined,
+                  border: repl ? '1px solid #6cc88d' : undefined,
+                  borderRadius: repl ? '4px' : undefined,
+                  padding: repl ? '1px 4px' : undefined,
+                },
+              },
+                repl === undefined ? sp.text : repl,
+                repl !== undefined
+                  ? React.createElement('span', { style: { color: '#2a7', fontSize: '11px', marginLeft: '4px' } }, '✔ 已采纳')
+                  : null),
+              ins.map((text, k) =>
+                React.createElement('div', {
+                  key: `ins-${k}`,
+                  style: { whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#e8f7ee', border: '1px dashed #6cc88d', borderRadius: '4px', padding: '1px 4px', color: '#155' },
+                },
+                  React.createElement('span', { style: { color: '#2a7', fontSize: '11px', marginRight: '4px' } }, '＋ 新增'),
+                  text)),
+            )
+          })
+        })())
+      : null,
     React.createElement('div', {
+      id: 'polish-suggestions',
       style: {
-        maxHeight: state.expanded ? '46vh' : 300, overflowY: 'auto',
+        maxHeight: state.expanded ? '46vh' : 280, overflowY: 'auto',
         display: 'flex', flexDirection: 'column', gap: '6px', padding: '2px',
       },
     },
       suggestions.length === 0
-        ? React.createElement('div', { style: { fontSize: '12px', color: '#888', padding: '8px' } }, '未检测到改动（与原文一致）')
+        ? React.createElement('div', { style: { fontSize: '12px', color: '#c90', padding: '8px', border: '1px dashed #e0b84f', borderRadius: '6px' } },
+          '本次润色未返回有效改动（模型可能原样照抄了原文），已强化提示词要求实质修改。',
+          React.createElement('button', { 'data-action': 'polish', style: { ...buttonStyle, marginLeft: '6px', fontSize: '12px', padding: '1px 8px' } }, '再润色一次'),
+        )
         : suggestions.map(suggestionCard),
     ),
     React.createElement('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' } },
@@ -871,6 +942,19 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     state.error = ''
     render()
   }
+  /** 点击「定位」：把原文定位视图滚动到该建议对应的原段并临时高亮。 */
+  const polishLocate = (id: string): void => {
+    const s = state.polishSuggestions.find((x) => x.id === id)
+    const view = document.getElementById('polish-original-view')
+    if (!s || !view) return
+    const paraEl = view.querySelector<HTMLElement>(`[data-para-idx="${s.paraIndex}"]`)
+    if (!paraEl) return
+    paraEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const prevBg = paraEl.style.background
+    paraEl.style.background = '#fff3b0'
+    paraEl.style.transition = 'background .4s'
+    setTimeout(() => { paraEl.style.background = prevBg }, 1600)
+  }
   const diagnose = async (): Promise<void> => {
     state.diagnosing = true
     state.error = ''
@@ -1176,6 +1260,7 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       case 'polish-save': void polishSave(); break
       case 'polish-discard': polishDiscard(); break
       case 'polish-toggle': if (id) polishToggle(id); break
+      case 'polish-locate': if (id) polishLocate(id); break
       case 'polish-accept-all': polishAcceptAll(); break
       case 'polish-reject-all': polishRejectAll(); break
       case 'undo': undo(); break
