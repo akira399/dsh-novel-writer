@@ -729,3 +729,13 @@
 - **uiHidden 即时生效**：client 侧改为订阅 settingsScope，uiHidden 变化时动态注入/移除侧边栏入口（`ensureEntry` 幂等），不再需要重启/刷新；设置卡文案同步。
 - 该模块无新 core 纯逻辑，以 typecheck + build + 现有 299 测试为准（client 行为变化无法单测，热重载+人工验证）。
 **验收**：typecheck 0 错误；`npm test` 299/299；build 全绿；热重载生效。
+
+## 模块 16：设置卡「命名空间未暴露」修复 — 隐藏入口改 localStorage 独立可用
+
+**日期**：2026-08-17
+**背景**：用户环境 settingsScope 为 `unavailable`（契约：命名空间未对该 client 暴露，或连接处于 memory/进程本地模式），设置卡原先在 unavailable 时只显示错误、不渲染任何开关，导致「隐藏侧边栏入口」无法使用。
+**修复**：
+- 新增 `src/client/ui-hidden.ts`：隐藏开关存 `localStorage`（key dsh-novel-writer:uiHidden），切换派发自定义事件即时通知入口；与 host settings 解耦，任何连接模式都可用。
+- `settings-card.tsx`：`uiHidden` 读写 localStorage；当 host settings `unavailable` 时**降级渲染**（标题 + 隐藏开关 + 说明），不再只报错；ready 时照常显示启用/数据目录 + host 同步。
+- `client/index.ts`：`ensureEntry` 改读 `readUiHidden()`（localStorage）；监听自定义事件 + host settings scope（host 的 uiHidden 变化也同步到 localStorage）即时增删侧边栏入口。
+**验收**：typecheck 0 错误；`npm test` 299/299；build 全绿；热重载生效。

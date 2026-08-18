@@ -1,6 +1,6 @@
 {
   "name": "@dsh-external/dsh-novel-writer",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "大肥鱼的小说工坊 — DSH 网络小说创作插件：九阶段门禁式创作流程 + 世界书(lorebook)设定注入 + 本地书籍导入 + AI 一键润色 + 去AI味 + 黄金三章诊断 + 百万字一致性 + 市场调研与模板复制，面向开源用户的开箱即用方案。",
   "type": "module",
   "main": "./lib/index.js",

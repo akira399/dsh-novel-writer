@@ -286,7 +286,7 @@ projects/      项目（book.json + docs/ + chapters/ + audit.jsonl + ledger.jso
 | --- | --- | --- |
 | enabled | true | 插件总开关（关闭即注销工具/技能，数据保留） |
 | dataDir | `~/.dsh/dsh-novel-writer` | 数据根目录 |
-| uiHidden | false | 隐藏侧边栏「大肥鱼的小说工坊」入口（摸鱼模式；即时生效，取消勾选即恢复） |
+| uiHidden | false | 隐藏侧边栏「大肥鱼的小说工坊」入口（存于浏览器本地，任何环境可用；即时生效） |
 
 项目级（创建时/模板复制保留）：**27 题材**、每章字数目标（默认 2000-4000）、风格（视角/禁用词/AI 味词）、阶段门禁开关。
 

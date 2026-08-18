@@ -1,21 +1,23 @@
 /**
  * dsh-novel-writer — 设置卡（P1-I）。
- * 直接读写 settingsScope（getSnapshot/subscribe/set），自绘表单。
+ * 读写 settingsScope（host 设置：启用/数据目录）+ 浏览器端「隐藏侧边栏入口」
+ * （localStorage，见 ui-hidden.ts）——该开关不依赖 host settings 是否暴露。
  */
 import React, { useEffect, useState } from 'react'
 import type { SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
+import { readUiHidden, writeUiHidden } from './ui-hidden.ts'
 
 export interface NovelSettingsCardProps {
   scope: SettingsScope<{ enabled: boolean; dataDir: string; uiHidden: boolean }>
 }
 
-/** 最小设置卡：启用开关 + 数据目录 + 隐藏入口（摸鱼）+ 保存。 */
+/** 最小设置卡：启用开关 + 数据目录（host）+ 隐藏入口（摸鱼，localStorage）。 */
 export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.ReactNode {
   const snapshot = scope.getSnapshot()
   const ready = snapshot.status === 'ready' && snapshot.value !== undefined
   const [enabled, setEnabled] = useState<boolean>(snapshot.value?.enabled ?? true)
   const [dataDir, setDataDir] = useState<string>(snapshot.value?.dataDir ?? '')
-  const [uiHidden, setUiHidden] = useState<boolean>(snapshot.value?.uiHidden ?? false)
+  const [uiHidden, setUiHidden] = useState<boolean>(readUiHidden())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -24,18 +26,12 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
     if (next.status === 'ready' && next.value !== undefined) {
       setEnabled(next.value.enabled)
       setDataDir(next.value.dataDir ?? '')
-      setUiHidden(next.value.uiHidden ?? false)
     }
   }), [scope])
 
-  if (!ready) {
-    return React.createElement(
-      'div',
-      { style: { padding: '12px', fontSize: '12px', color: '#888' } },
-      snapshot.status === 'unavailable'
-        ? '小说工坊设置不可用（命名空间未暴露）'
-        : '小说工坊设置加载中…',
-    )
+  const onToggleHidden = (value: boolean): void => {
+    setUiHidden(value)
+    writeUiHidden(value) // localStorage + 派发事件 → 侧边栏入口即时增删
   }
 
   const save = async (): Promise<void> => {
@@ -51,6 +47,28 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
     } finally {
       setSaving(false)
     }
+  }
+
+  // 隐藏开关（不依赖 host settings，任何环境可用）
+  const hiddenToggle = React.createElement(
+    'label',
+    { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+    React.createElement('input', {
+      type: 'checkbox',
+      checked: uiHidden,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => onToggleHidden(e.target.checked),
+    }),
+    '隐藏侧边栏入口',
+  )
+
+  // host settings 不可用（命名空间未暴露 / memory 模式）：降级为纯本地开关，不让用户卡住
+  if (!ready) {
+    return React.createElement(
+      'div',
+      { style: { padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' } },
+      React.createElement('div', { style: { fontWeight: 600 } }, '大肥鱼的小说工坊'),
+      hiddenToggle,
+    )
   }
 
   return React.createElement(
@@ -79,16 +97,7 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDataDir(e.target.value),
       }),
     ),
-    React.createElement(
-      'label',
-      { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      React.createElement('input', {
-        type: 'checkbox',
-        checked: uiHidden,
-        onChange: (e: React.ChangeEvent<HTMLInputElement>) => setUiHidden(e.target.checked),
-      }),
-      '隐藏侧边栏入口（摸鱼模式；即时生效，取消勾选即恢复）',
-    ),
+    hiddenToggle,
     React.createElement(
       'div',
       { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
