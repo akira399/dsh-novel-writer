@@ -6,15 +6,16 @@ import React, { useEffect, useState } from 'react'
 import type { SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
 
 export interface NovelSettingsCardProps {
-  scope: SettingsScope<{ enabled: boolean; dataDir: string }>
+  scope: SettingsScope<{ enabled: boolean; dataDir: string; uiHidden: boolean }>
 }
 
-/** 最小设置卡：启用开关 + 数据目录 + 保存。 */
+/** 最小设置卡：启用开关 + 数据目录 + 隐藏入口（摸鱼）+ 保存。 */
 export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.ReactNode {
   const snapshot = scope.getSnapshot()
   const ready = snapshot.status === 'ready' && snapshot.value !== undefined
   const [enabled, setEnabled] = useState<boolean>(snapshot.value?.enabled ?? true)
   const [dataDir, setDataDir] = useState<string>(snapshot.value?.dataDir ?? '')
+  const [uiHidden, setUiHidden] = useState<boolean>(snapshot.value?.uiHidden ?? false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -23,6 +24,7 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
     if (next.status === 'ready' && next.value !== undefined) {
       setEnabled(next.value.enabled)
       setDataDir(next.value.dataDir ?? '')
+      setUiHidden(next.value.uiHidden ?? false)
     }
   }), [scope])
 
@@ -41,6 +43,7 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
     try {
       await scope.set('enabled', enabled)
       await scope.set('dataDir', dataDir)
+      await scope.set('uiHidden', uiHidden)
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
     } catch {
@@ -75,6 +78,16 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
         style: { padding: '4px 6px', border: '1px solid #ccc', borderRadius: '4px' },
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDataDir(e.target.value),
       }),
+    ),
+    React.createElement(
+      'label',
+      { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      React.createElement('input', {
+        type: 'checkbox',
+        checked: uiHidden,
+        onChange: (e: React.ChangeEvent<HTMLInputElement>) => setUiHidden(e.target.checked),
+      }),
+      '隐藏侧边栏入口（摸鱼模式；保存后重启/刷新生效，需回本设置页重新打开）',
     ),
     React.createElement(
       'div',

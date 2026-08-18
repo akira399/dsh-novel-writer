@@ -19,6 +19,11 @@ export function buildWritePrompt(book: Book, packet: ContextPacket): string {
     packet.loreInjection.renderedAppend ? `【设定】\n${packet.loreInjection.renderedAppend}` : '',
     packet.loreInjection.atDepth.length > 0 ? `【关键设定】\n${packet.loreInjection.atDepth.map((item) => item.entry.content).join('\n')}` : '',
     `【硬约束】\n${packet.constraints.map((c) => `- ${c}`).join('\n')}`,
+    '写作要求（务必遵守）：',
+    '1. 剧情必须严格按【本章细纲】推进，逐条完成细纲要点，不得跳脱、自创与细纲无关的大段剧情（细纲是硬约束，不是参考）。',
+    '2. 人物、境界、物品、宗门、关系等一律以【全书设定】【当前事实快照】【设定】为唯一事实来源，严禁自创与设定冲突的内容；不确定的设定不要凭空编造。',
+    '3. 必须承接【前文】【更早章节摘要】已发生的剧情与人物状态，保持时间线与因果连贯，不要重复或推翻前文已交代的事实。',
+    '4. 保持既有视角、人设口吻与文风，正文信息密度高、对话推进情节。',
     '请直接输出本章正文（约 2000-4000 字），不要解释。',
   ]
   return parts.filter(Boolean).join('\n\n')

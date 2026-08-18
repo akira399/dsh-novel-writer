@@ -189,18 +189,41 @@ export function lorebookImportEntriesTool(lore: LoreService) {
 export function lorebookExportEntriesTool(lore: LoreService) {
   return defineTool({
     name: 'lorebook_export_entries',
-    description: '导出全部世界书条目：format=operit 输出夏瑾/SillyTavern 兼容的精简数组；format=full 输出完整字段。用于备份或迁移到其他工具。',
+    description: '导出全部世界书条目。format=operit 输出夏瑾兼容精简数组；format=full 输出完整字段；' +
+      'format=sillytavern 输出 SillyTavern 原生 lorebook（可直接在酒馆 Import 导入）。用于备份或迁移到其他工具。',
     parameters: {
-      format: { type: 'string', description: 'operit（默认，精简兼容）| full（完整字段）' },
+      format: { type: 'string', description: 'operit（默认，精简兼容）| full（完整字段）| sillytavern（酒馆原生）' },
     },
     output: jsonOutput(),
     execute: async (rawArgs) => {
-      const format = (rawArgs as { format?: string }).format === 'full' ? 'full' : 'operit'
+      const format = ['full', 'sillytavern'].includes((rawArgs as { format?: string }).format ?? '')
+        ? (rawArgs as { format: string }).format
+        : 'operit'
       return asJson(await asResult(async () => {
         const entries = await lore.listEntries()
-        const payload = format === 'full'
-          ? entries
-          : entries.map((entry) => ({
+        let payload: unknown
+        let wrapper: 'array' | 'entries' = 'array'
+        if (format === 'full') {
+          payload = entries
+        } else if (format === 'sillytavern') {
+          // SillyTavern 原生 world info / lorebook：{ entries: [ {...} ] }
+          wrapper = 'entries'
+          payload = entries.map((entry, index) => ({
+            uid: index + 1,
+            key: entry.name,
+            keys: entry.keywords.length > 0 ? entry.keywords : [entry.name],
+            secondary_keys: [],
+            comment: entry.note ?? entry.name,
+            content: entry.content,
+            constant: entry.always_active,
+            selective: false,
+            insert_order: 100 - Math.min(100, Math.max(0, entry.priority)),
+            enabled: entry.enabled,
+            position: entry.inject_position === 'prepend' ? 0 : 1,
+            disable: false,
+          }))
+        } else {
+          payload = entries.map((entry) => ({
             name: entry.name,
             content: entry.content,
             keywords: entry.keywords,
@@ -214,7 +237,8 @@ export function lorebookExportEntriesTool(lore: LoreService) {
             inject_position: entry.inject_position,
             insertion_depth: entry.insertion_depth,
           }))
-        return { format, count: entries.length, entries: payload }
+        }
+        return { format, count: entries.length, ...(wrapper === 'entries' ? { entries: payload } : { entries: payload }) }
       }))
     },
     isConcurrencySafe: () => true,

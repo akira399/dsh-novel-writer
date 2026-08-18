@@ -32,6 +32,7 @@ const NS = 'dsh-novel-writer'
 interface SettingsShape {
   enabled: boolean
   dataDir: string
+  uiHidden: boolean
 }
 
 export function apply(ctx: ClientContext): void {
@@ -51,8 +52,12 @@ export function apply(ctx: ClientContext): void {
   ), '@dsh-external/dsh-novel-writer: settings card')
 
   // 侧边栏入口 + 工作台抽屉（DOM 级，自愈注入；一键写章走 host LLM 直写自动保存）
+  // 摸鱼模式：设置 uiHidden=true 时隐藏侧边栏入口（需回设置里重新打开）
   let workshop: WorkshopHandle | null = null
-  const disposeSidebar = mountSidebarEntry(() => {
+  const hidden = scope.getSnapshot().status === 'ready'
+    ? scope.getSnapshot().value?.uiHidden === true
+    : false
+  const disposeSidebar = hidden ? (() => { /* 隐藏入口：不注入侧边栏按钮 */ }) : mountSidebarEntry(() => {
     workshop?.toggle()
   }, () => {
     workshop = mountWorkshopDrawer({ api: '/api/novel-writer', fenceHeader: 'x-dsh-novel-writer' })

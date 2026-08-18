@@ -10,7 +10,7 @@
  */
 import React from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { diffSentences, countDiffChanges, type DiffChunk } from '../core/polish/diff.ts'
+import { diffSentences, diffChars, countDiffChanges, splitPolishSuggestions, applyPolishSuggestions, type DiffChunk, type PolishSuggestion } from '../core/polish/diff.ts'
 import { drawerSize } from '../core/drawer-size.ts'
 import { GENRES, genreLabel, type GenreOption } from '../core/genres.ts'
 
@@ -116,6 +116,8 @@ interface DrawerState {
   polishing: boolean
   /** 润色预览（确认前不落盘）：original=用户原文，polished=润色文。 */
   polishPreview: { original: string; polished: string } | null
+  /** 由原文vs润色文拆分出的逐条建议（每条可独立采纳/拒绝）。 */
+  polishSuggestions: PolishSuggestion[]
   /** 润色保存确认中。 */
   polishBusy: boolean
   /** 文本历史栈（撤销：用户输入防抖快照 + 写章/润色应用前快照）。 */
@@ -140,7 +142,7 @@ function initial(): DrawerState {
     report: null, diagnosing: false, deleteState: null, exporting: false,
     view: 'projects', loreEntries: [], loreForm: emptyLoreForm(), loreBusy: false,
     bookMap: {}, loreFilter: 'all', loreAutogenBusy: false, importing: false,
-    polishing: false, polishPreview: null, polishBusy: false, undoStack: [],
+    polishing: false, polishPreview: null, polishSuggestions: [], polishBusy: false, undoStack: [],
     baseline: '', draftModified: false, expanded: false,
   }
 }
@@ -215,36 +217,93 @@ function DiagnosePanelV(state: DrawerState): React.ReactNode {
   )
 }
 
-/** 润色预览面板：句子级 diff 标亮 + 确认保存/放弃还原（纯展示，交互走 data-action）。 */
+/** 字级 diff 渲染：把一段文本按 diffChars 拆成 同/删/增 内联片段。 */
+function CharDiffV(original: string, polished: string, accent: 'warmer' | 'blue'): React.ReactNode {
+  const chunks = diffChars(original, polished)
+  return React.createElement('span', {},
+    chunks.map((chunk, index) => {
+      if (chunk.type === 'same') return React.createElement('span', { key: index }, chunk.text)
+      if (chunk.type === 'del') {
+        return React.createElement('span', { key: index, style: { background: '#fdd', color: '#a33', textDecoration: 'line-through', borderRadius: '2px' } }, chunk.text)
+      }
+      // add
+      const blue = accent === 'blue'
+      return React.createElement('span', {
+        key: index,
+        style: blue
+          ? { background: '#dbeafe', color: '#1e40af', borderRadius: '2px' }
+          : { background: '#ffe58a', color: '#333', borderRadius: '2px' },
+      }, chunk.text)
+    }),
+  )
+}
+
+/** 润色预览面板：逐条建议（每条可独立采纳/拒绝）+ 字级 diff 标出改动处。 */
 function DiffPreviewV(state: DrawerState): React.ReactNode {
   const preview = state.polishPreview
   if (!preview) return null
-  const chunks: DiffChunk[] = diffSentences(preview.original, preview.polished)
-  const { adds, dels } = countDiffChanges(chunks)
-  const renderChunk = (chunk: DiffChunk, index: number): React.ReactNode => {
-    if (chunk.type === 'same') return React.createElement('span', { key: index }, chunk.text)
-    if (chunk.type === 'del') {
-      return React.createElement('span', { key: index, style: { background: '#fdd', color: '#a33', textDecoration: 'line-through' } }, chunk.text)
-    }
-    return React.createElement('span', { key: index, style: { background: '#ffe58a', color: '#333' } }, chunk.text)
+  // 建议列表：优先用已派生的，否则即时生成
+  const suggestions = state.polishSuggestions.length > 0
+    ? state.polishSuggestions
+    : splitPolishSuggestions(preview.original, preview.polished)
+  const acceptedCount = suggestions.filter((s) => s.accepted).length
+  const decided = acceptedCount + suggestions.filter((s) => !s.accepted && s.original === '' && s.polished === '').length
+
+  const suggestionCard = (s: PolishSuggestion): React.ReactNode => {
+    const isIns = s.original === ''
+    const isDel = s.polished === ''
+    const title = isIns ? '（新增）' : isDel ? '（删除）' : `建议 ${s.id}`
+    return React.createElement('div', {
+      key: s.id,
+      style: {
+        border: s.accepted ? '1px solid #2a7' : '1px solid #e0e0e0',
+        borderRadius: '6px', padding: '8px', background: s.accepted ? '#f0fbf4' : '#fcfcfc',
+      },
+    },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' } },
+        React.createElement('span', { style: { fontWeight: 600, fontSize: '12px', color: s.accepted ? '#2a7' : '#666' } }, title),
+        React.createElement('span', { style: { marginLeft: 'auto', fontSize: '12px' } },
+          React.createElement('button', {
+            'data-action': 'polish-toggle', 'data-id': s.id,
+            style: { ...buttonStyle, fontSize: '12px', padding: '1px 8px', borderColor: s.accepted ? '#2a7' : '#888', color: s.accepted ? '#2a7' : '#888' },
+          }, s.accepted ? '✓ 已采纳 · 点此撤销' : '采纳这条'),
+        ),
+      ),
+      // 原文 → 润色（字级标亮具体改了哪几个字）
+      s.original.length > 0
+        ? React.createElement('div', { style: { fontSize: '12px', lineHeight: 1.6, color: '#555', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
+          '原文：', CharDiffV(s.original, s.polished, 'blue'))
+        : null,
+      s.polished.length > 0
+        ? React.createElement('div', { style: { fontSize: '12px', lineHeight: 1.6, color: '#155', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
+          '改后：', CharDiffV(s.original, s.polished, 'warmer'))
+        : null,
+    )
   }
+
   return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #d9b64f', borderRadius: '6px', background: '#fffbeb', padding: '10px' } },
-    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
       React.createElement('span', { style: { fontWeight: 700, fontSize: '13px' } }, '润色预览'),
-      React.createElement('span', { style: { fontSize: '11px', color: '#888' } }, `修改 ${adds + dels} 处（黄=润色后文，红删除线=被替换原文）`),
+      React.createElement('span', { style: { fontSize: '11px', color: '#888' } },
+        `共 ${suggestions.length} 条建议 · 已采纳 ${acceptedCount} 条（每条可单独采纳；删除线=删除，黄底/蓝底=新增/改动字）`),
     ),
     React.createElement('div', {
       style: {
-        maxHeight: state.expanded ? '48vh' : 240, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-        fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.7,
-        border: '1px solid #eee', borderRadius: '6px', padding: '8px', background: '#fff',
+        maxHeight: state.expanded ? '46vh' : 300, overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', gap: '6px', padding: '2px',
       },
-    }, chunks.map(renderChunk)),
-    React.createElement('div', { style: { display: 'flex', gap: '6px', alignItems: 'center' } },
+    },
+      suggestions.length === 0
+        ? React.createElement('div', { style: { fontSize: '12px', color: '#888', padding: '8px' } }, '未检测到改动（与原文一致）')
+        : suggestions.map(suggestionCard),
+    ),
+    React.createElement('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' } },
+      React.createElement('button', { 'data-action': 'polish-accept-all', style: { ...buttonStyle, borderColor: '#2a7', color: '#156' } }, '全部采纳'),
+      React.createElement('button', { 'data-action': 'polish-reject-all', style: buttonStyle }, '全部拒绝'),
       React.createElement('button', { 'data-action': 'polish-save', disabled: state.polishBusy, style: { ...buttonStyle, borderColor: '#2a7', color: '#156' } },
         state.polishBusy ? '保存中…' : '确认保存'),
       React.createElement('button', { 'data-action': 'polish-discard', style: buttonStyle }, '放弃还原'),
-      React.createElement('span', { style: { fontSize: '11px', color: '#888' } }, '确认后写入章节；放弃则恢复原文'),
+      React.createElement('span', { style: { fontSize: '11px', color: '#888' } }, '保存只写入你采纳的改动；放弃则恢复原文'),
     ),
   )
 }
@@ -600,6 +659,7 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     }
     state.undoStack = []
     state.polishPreview = null
+    state.polishSuggestions = []
     try {
       const content = await apiFetch(options, `/projects/${projectId}/chapters/${no}`) as string | null
       const text = content ?? ''
@@ -743,8 +803,9 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       }) as { original: string; polished: string }
       pushUndo(state.draft) // 润色前原文入撤销栈（可一键回退）
       state.polishPreview = { original: result.original, polished: result.polished }
+      state.polishSuggestions = splitPolishSuggestions(result.original, result.polished)
       setDraft(result.polished) // 润色结果展示于编辑区
-      state.notice = '润色完成：编辑区已显示润色文，下方标亮修改处；请确认保存或放弃'
+      state.notice = '润色完成：下方已按改动拆成多条建议，可逐条选择采纳；标出的只是真正改动处'
     } catch (cause) {
       state.error = String(cause)
     } finally {
@@ -752,17 +813,22 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       render()
     }
   }
-  /** 确认保存润色结果（落盘当前编辑区文本，停留当前章）。 */
+  /** 确认保存润色结果：把用户采纳的建议重组回正文落盘（保留采纳的部分）。 */
   const polishSave = async (): Promise<void> => {
     if (!state.polishPreview) return
+    // 组织所采纳的建议；用户未逐条决定时默认全采纳（保持旧行为，避免误删）
+    const suggestions = state.polishSuggestions.length > 0
+      ? state.polishSuggestions
+      : splitPolishSuggestions(state.polishPreview.original, state.polishPreview.polished)
+    const text = applyPolishSuggestions(state.polishPreview.original, suggestions)
     state.polishBusy = true
     state.error = ''
     render()
     try {
       await apiFetch(options, `/projects/${state.selected}/chapters/${state.chapterNo}`, {
-        method: 'POST', body: JSON.stringify({ title: `第 ${state.chapterNo} 章`, text: state.draft }),
+        method: 'POST', body: JSON.stringify({ title: `第 ${state.chapterNo} 章`, text }),
       })
-      state.notice = `已保存润色结果：第 ${state.chapterNo} 章`
+      state.notice = `已保存润色结果：第 ${state.chapterNo} 章（采纳 ${suggestions.filter((s) => s.accepted).length} 条改动）`
       await loadChapter(state.selected!, state.chapterNo) // 重新加载已保存正文（清预览/撤销栈）
       await refreshProjects()
     } catch (cause) {
@@ -777,6 +843,26 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     if (!state.polishPreview) return
     setDraft(state.polishPreview.original)
     state.polishPreview = null
+    state.polishSuggestions = []
+    state.error = ''
+    render()
+  }
+  /** 逐条切换某条建议的采纳状态。 */
+  const polishToggle = (id: string): void => {
+    state.polishSuggestions = state.polishSuggestions.map((s) => (s.id === id ? { ...s, accepted: !s.accepted } : s))
+    state.error = ''
+    render()
+  }
+  /** 全部采纳（仅有内容的建议默认采纳）。 */
+  const polishAcceptAll = (): void => {
+    state.polishSuggestions = state.polishSuggestions.map((s) => (s.polished.length > 0 ? { ...s, accepted: true } : s))
+    state.error = ''
+    render()
+  }
+  /** 全部拒绝（回到原文；保存时等于不采纳任何建议）。 */
+  const polishRejectAll = (): void => {
+    state.polishSuggestions = state.polishSuggestions.map((s) => ({ ...s, accepted: false }))
+    setDraft(state.polishPreview?.original ?? state.draft)
     state.error = ''
     render()
   }
@@ -1047,6 +1133,9 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       case 'polish': void polishChapter(); break
       case 'polish-save': void polishSave(); break
       case 'polish-discard': polishDiscard(); break
+      case 'polish-toggle': if (id) polishToggle(id); break
+      case 'polish-accept-all': polishAcceptAll(); break
+      case 'polish-reject-all': polishRejectAll(); break
       case 'undo': undo(); break
       case 'diagnose': void diagnose(); break
       case 'export': void exportProject(); break

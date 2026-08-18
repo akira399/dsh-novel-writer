@@ -41,11 +41,14 @@ export interface Config {
   enabled: boolean
   /** 数据根目录（默认 ~/.dsh/dsh-novel-writer）。 */
   dataDir: string
+  /** 隐藏侧边栏「大肥鱼的小说工坊」入口（摸鱼模式；入口隐藏后需到设置里重新打开）。 */
+  uiHidden: boolean
 }
 
 export const Config = z.object({
   enabled: z.boolean().default(true),
   dataDir: z.string().default(''),
+  uiHidden: z.boolean().default(false),
 })
 
 function resolveDataDir(config: Config): string {
