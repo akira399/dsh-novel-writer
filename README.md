@@ -28,7 +28,7 @@
 ### 世界书（lorebook）设定注入
 - 关键词 / 正则触发 + 常驻注入，条目按书绑定（每本书独立栏目）
 - 导入支持 **Operit / SillyTavern / 角色卡** 三格式，自动兼容警告
-- **导出到酒馆**：`lorebook_export_entries format=sillytavern` 输出 SillyTavern 原生 lorebook（`{entries:[...]}`），可直接在酒馆「Import」导入作前置设定
+- **导出到酒馆**：世界书面板点「**导出到酒馆**」直接下载 SillyTavern 原生 lorebook JSON（`{entries:[...]}`）即可在酒馆「Import」导入作前置设定；也可用 `lorebook_export_entries format=sillytavern` 走对话导出
 - **AI 一键生成设定**：按书名+题材自动生成 4-6 条核心设定并绑定本书
 - 注入 token 预算裁剪，长上下文不爆窗
 
@@ -244,6 +244,7 @@ projects/      项目（book.json + docs/ + chapters/ + audit.jsonl + ledger.jso
 - **AI 一键生成**：世界书面板先在上方「栏目」下拉选一本书 → 点「**AI 一键生成设定**」→ 按书名+题材自动生成 4-6 条核心设定（世界观/主角/宗门/境界等）并绑定本书。
 - **手动**：点「+ 新建条目」→ 填名称/内容/触发关键词（逗号分隔）/是否常驻/优先级，并「绑定到本书」。
 - **导入已有设定**：`lorebook_import_entries`（Operit / SillyTavern / 角色卡格式，可直接发文件）。
+- **导出到酒馆**：世界书面板点「**导出到酒馆**」→ 下载 `novel-lorebook-export.json` → 在 SillyTavern「Import」导入即可当前置设定（也可对话 `lorebook_export_entries format=sillytavern`）。
 - 写作时命中的条目会自动注入上下文包（每书独立栏目，`Lorebook`）。
 
 ### 6️⃣ 导入本地书籍
@@ -285,7 +286,7 @@ projects/      项目（book.json + docs/ + chapters/ + audit.jsonl + ledger.jso
 | --- | --- | --- |
 | enabled | true | 插件总开关（关闭即注销工具/技能，数据保留） |
 | dataDir | `~/.dsh/dsh-novel-writer` | 数据根目录 |
-| uiHidden | false | 隐藏侧边栏「大肥鱼的小说工坊」入口（摸鱼模式；入口隐藏后回本设置页重新打开） |
+| uiHidden | false | 隐藏侧边栏「大肥鱼的小说工坊」入口（摸鱼模式；即时生效，取消勾选即恢复） |
 
 项目级（创建时/模板复制保留）：**27 题材**、每章字数目标（默认 2000-4000）、风格（视角/禁用词/AI 味词）、阶段门禁开关。
 

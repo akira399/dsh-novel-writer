@@ -52,19 +52,41 @@ export function apply(ctx: ClientContext): void {
   ), '@dsh-external/dsh-novel-writer: settings card')
 
   // 侧边栏入口 + 工作台抽屉（DOM 级，自愈注入；一键写章走 host LLM 直写自动保存）
-  // 摸鱼模式：设置 uiHidden=true 时隐藏侧边栏入口（需回设置里重新打开）
+  // 摸鱼模式：uiHidden=true 即时隐藏侧边栏入口（不需重启/刷新，回设置页取消勾选即恢复）
   let workshop: WorkshopHandle | null = null
-  const hidden = scope.getSnapshot().status === 'ready'
-    ? scope.getSnapshot().value?.uiHidden === true
-    : false
-  const disposeSidebar = hidden ? (() => { /* 隐藏入口：不注入侧边栏按钮 */ }) : mountSidebarEntry(() => {
-    workshop?.toggle()
-  }, () => {
-    workshop = mountWorkshopDrawer({ api: '/api/novel-writer', fenceHeader: 'x-dsh-novel-writer' })
-  })
+  let sidebarDisposer: (() => void) | null = null
+
+  const ensureWorkshop = (): WorkshopHandle => {
+    if (!workshop) workshop = mountWorkshopDrawer({ api: '/api/novel-writer', fenceHeader: 'x-dsh-novel-writer' })
+    return workshop
+  }
+
+  /** 按当前 uiHidden 增删侧边栏入口（幂等）。 */
+  const ensureEntry = (): void => {
+    const hidden = scope.getSnapshot().status === 'ready'
+      ? scope.getSnapshot().value?.uiHidden === true
+      : false
+    if (hidden) {
+      sidebarDisposer?.()
+      sidebarDisposer = null
+    } else if (!sidebarDisposer) {
+      sidebarDisposer = mountSidebarEntry(() => {
+        ensureWorkshop().toggle()
+      }, () => {
+        ensureWorkshop()
+      })
+    }
+  }
+
+  // 初始注入 + 监听 uiHidden 即时切换
+  ensureEntry()
+  const unsub = scope.subscribe(() => ensureEntry())
   ctx.effect(() => () => {
-    disposeSidebar()
+    unsub()
+    sidebarDisposer?.()
+    sidebarDisposer = null
     workshop?.dispose()
+    workshop = null
   }, '@dsh-external/dsh-novel-writer: sidebar + drawer')
 }
 

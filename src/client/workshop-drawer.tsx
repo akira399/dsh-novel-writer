@@ -358,6 +358,11 @@ function LorebookPanelView(state: DrawerState): React.ReactNode {
         style: { ...buttonStyle, marginLeft: 'auto', color: '#a06', borderColor: '#a06' },
       }, loreAutogenBusy ? '生成中…（约 1 分钟）' : 'AI 一键生成设定'),
       React.createElement('button', { 'data-action': 'lore-new', disabled: editing, style: buttonStyle }, '+ 新建条目'),
+      React.createElement('button', {
+        'data-action': 'lore-export-st',
+        title: '导出一个 SillyTavern 原生 lorebook JSON 文件，可在酒馆「Import」直接导入作前置设定',
+        style: { ...buttonStyle, color: '#156', borderColor: '#29a' },
+      }, '导出到酒馆'),
     ),
     // 按书分栏（每本书一个栏目）
     React.createElement('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' } },
@@ -1057,6 +1062,42 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       render()
     }
   }
+  /** 导出世界书为 SillyTavern 原生 lorebook JSON（可直接在酒馆 Import 导入）。 */
+  const exportLorebookST = (): void => {
+    const entries = state.loreEntries
+    if (entries.length === 0) {
+      state.error = '世界书还没有条目可导出'
+      render()
+      return
+    }
+    const lorebook = {
+      entries: entries.map((entry, index) => ({
+        uid: index + 1,
+        key: entry.name,
+        keys: entry.keywords.length > 0 ? entry.keywords : [entry.name],
+        secondary_keys: [],
+        comment: entry.name,
+        content: entry.content,
+        constant: entry.always_active,
+        selective: false,
+        insert_order: 100 - Math.min(100, Math.max(0, entry.priority)),
+        enabled: entry.enabled,
+        position: entry.inject_position === 'prepend' ? 0 : 1,
+        disable: false,
+      })),
+    }
+    const blob = new Blob([JSON.stringify(lorebook, null, 2)], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'novel-lorebook-export.json'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    state.notice = `已导出 ${entries.length} 条世界书为酒馆 lorebook JSON（novel-lorebook-export.json），可在 SillyTavern「Import」导入`
+    render()
+  }
 
   const dispatch = (action: string, id?: string): void => {
     switch (action) {
@@ -1119,6 +1160,7 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       case 'lore-delete': if (id) void loreDelete(id); break
       case 'lore-toggle': if (id) void loreToggle(id); break
       case 'lore-autogen': void loreAutogen(); break
+      case 'lore-export-st': exportLorebookST(); break
       case 'back':
         // 返回列表：先刷新列表统计（写章后的章节数/字数要在卡片上生效）
         state.selected = null

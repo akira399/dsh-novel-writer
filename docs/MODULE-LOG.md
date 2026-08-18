@@ -720,3 +720,12 @@
 - 测试：`polish-diff.spec.ts` +8（字级 diff 3 + 建议拆分/重组 4 + 纯插入 1）。
 **验收**：typecheck 0 错误；`npm test` **299/299**；build 全绿；热重载生效。
 **遗留**：GUI 世界书面板暂无"一键导出到酒馆"按钮（当前走工具/对话 `lorebook_export_entries format=sillytavern`，可后续加导出按钮+Blob）；uiHidden 切换需重启/刷新生效。
+
+## 模块 15：补充两个遗留项（GUI 导出酒馆 + uiHidden 即时生效）
+
+**日期**：2026-08-17
+**范围**：
+- **GUI「导出到酒馆」按钮**：世界书面板顶部新增「导出到酒馆」，用当前条目生成 SillyTavern 原生 `{entries:[...]}`（uid/key/keys/constant/insert_order/position 等映射）→ Blob 下载 `novel-lorebook-export.json`，可在酒馆 Import 导入；与工具层 `lorebook_export_entries format=sillytavern` 同构。
+- **uiHidden 即时生效**：client 侧改为订阅 settingsScope，uiHidden 变化时动态注入/移除侧边栏入口（`ensureEntry` 幂等），不再需要重启/刷新；设置卡文案同步。
+- 该模块无新 core 纯逻辑，以 typecheck + build + 现有 299 测试为准（client 行为变化无法单测，热重载+人工验证）。
+**验收**：typecheck 0 错误；`npm test` 299/299；build 全绿；热重载生效。

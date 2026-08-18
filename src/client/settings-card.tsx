@@ -87,7 +87,7 @@ export function NovelSettingsCard({ scope }: NovelSettingsCardProps): React.Reac
         checked: uiHidden,
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => setUiHidden(e.target.checked),
       }),
-      '隐藏侧边栏入口（摸鱼模式；保存后重启/刷新生效，需回本设置页重新打开）',
+      '隐藏侧边栏入口（摸鱼模式；即时生效，取消勾选即恢复）',
     ),
     React.createElement(
       'div',
