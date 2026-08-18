@@ -707,3 +707,16 @@
 - 工具数 39 → **41**（README 中英同步修正为 41）；`tests/novel-service.spec.ts` +3（clone 复制 config/文档/正文不复制/状态重置/标题题材覆盖/未知源报错）；`tests/guide.spec.ts` +2（意图映射）。
 **验收**：typecheck 0 错误；`npm test` **291/291**；build 全绿；热重载生效。
 **遗留**：市场调研依赖主模型 web_search 可用（离线环境自动降级为提示）；世界书条目克隆（当前复制项目结构但不复制世界书绑定条目）——如需要可后续增强。
+
+## 模块 14：真实用户反馈驱动的四向优化（逐条采纳润色 / 字级 diff / 写章遵循 / 酒馆导出 / 摸鱼隐藏）
+
+**日期**：2026-08-17
+**背景**：用户反馈——①润色想逐条采纳不能、整段标红但只改一两字找不同累；②一键写文遵循大纲不足"没参考价值"；③需要彻底隐藏入口（摸鱼）；④世界书能否直接导入酒馆。
+**范围**：
+- **A 润色逐条采纳 + 字级 diff**：`core/polish/diff.ts` 新增 `diffChars`（字符级 LCS，标出具体改哪几个字）、`splitPolishSuggestions`（把原文vs润色拆成带位置的逐条建议）、`applyPolishSuggestions`（按采纳状态重组正文，支持纯插入）；client DiffPreviewV 重构为逐条建议卡片（每条 采纳/撤销 切换 + 原文/改后字级高亮），新增 dispatch polish-toggle/accept-all/reject-all，polishSave 改为"按采纳建议重组后落盘"。
+- **B 写章遵循约束**：`write-prompt.ts` 增补 4 条硬性写作要求（严格按本章细纲推进、以设定/事实快照为唯一事实来源、承接前文时间线因果、保持视角口吻），针对"规范了大纲还是没参考价值"。
+- **D 酒馆互操作**：`lorebook_export_entries` 新增 `format=sillytavern` 输出 SillyTavern 原生 `{entries:[...]}`（uid/key/keys/constant/insert_order/position 等映射），可直接在酒馆 Import；README 说明。
+- **C 摸鱼模式**：host Config 新增 `uiHidden`；client 据此隐藏侧边栏入口；设置卡加"隐藏侧边栏入口"开关。
+- 测试：`polish-diff.spec.ts` +8（字级 diff 3 + 建议拆分/重组 4 + 纯插入 1）。
+**验收**：typecheck 0 错误；`npm test` **299/299**；build 全绿；热重载生效。
+**遗留**：GUI 世界书面板暂无"一键导出到酒馆"按钮（当前走工具/对话 `lorebook_export_entries format=sillytavern`，可后续加导出按钮+Blob）；uiHidden 切换需重启/刷新生效。
