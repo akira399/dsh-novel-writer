@@ -112,26 +112,32 @@
 
 > **准备好这些就能开始**：一台装好 **DeepSeek Harness（DSH）** 的电脑（[DSH 快速上手](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart)）、一个能打开「终端 / 命令提示符」的入口即可。版本不挑系统，Windows / macOS / Linux 都支持；运行时需 **Node.js ≥ 18**（发布包为已编译产物，无需你构建）。
 
+> 🚨 **务必只安装「最新版本」**（当前最新为 **v0.1.7**，以下任一方式的下载链接都请以 Releases 页显示的**最新版**为准）。
+> - 不要安装旧版 **v0.1.0 / v0.1.1**——这两版在部分 DSH 宿主（RC 版）上会因设置卡注册缺少 `options.key` 而报错（`failed to apply loader entry … requires options.key`），插件无法加载。
+> - 该问题已在 **v0.1.2 修复**，所以请你装 **v0.1.2 之后的版本，推荐直接用最新 v0.1.7**。
+> - 简单判断：下载的文件名里版本号越大越新（如 `dsh-external-dsh-novel-writer-0.1.7.tgz`）。若页面有多个版本，选编号最大的那个。
+
 ### ✅ 方式一：一句话让 AI 替你装（小白首选）
 
-如果你在用某个能执行命令的 AI 助手（例如 DSH 里的智能体、或你的 AI 工具），**直接复制下面这段话发给它**，它会帮你下载、安装、并确认装好：
+如果你在用某个能执行命令的 AI 助手（例如 DSH 里的智能体、或你的 AI 工具），**直接复制下面这段话发给它**，它会帮你下载**最新版**、安装、并确认装好：
 
-> **请帮我安装「大肥鱼的小说工坊」（dsh-novel-writer）这个 DSH 插件，并确认它启用成功。步骤：**
-> **1）下载安装包**：访问 `https://github.com/akira399/dsh-novel-writer/releases/download/v0.1.1/dsh-external-dsh-novel-writer-0.1.1.tgz` 下载这个 `.tgz` 文件（这是已编译好的安装包，不需要构建）。如果该版本不可用，就打开 `https://github.com/akira399/dsh-novel-writer/releases` 找到最新版 `dsh-external-dsh-novel-writer-*.tgz` 下载。**
-> **2）安装**：在终端执行 `dsh plugin --profile web add <上一步下载的 tgz 绝对路径>`。如果是首次用 DSH，先确认 `dsh` 命令在 PATH 里；若提示没有这个命令，告诉我，我改用绝对路径或帮你配置。**
-> **3）确认启用**：执行 `dsh plugin list`（或你能用的查看已装插件命令），确认 `dsh-novel-writer` 在列且已启用。**
-> **4）收尾提醒**：告诉用户「在 DSH 网页上刷新页面（必要时强制刷新 Ctrl+Shift+R），侧边栏出现『大肥鱼的小说工坊』就装好了；若没出现，检查 DSH 插件列表里该插件的『启用』开关是否为开」。**
+> **请帮我安装「大肥鱼的小说工坊」（dsh-novel-writer）这个 DSH 插件，只装最新版本，并确认它启用成功。步骤：**
+> **0）版本要求（很重要）**：只准安装**最新版本**！先打开 `https://github.com/akira399/dsh-novel-writer/releases/latest` 找到最新发布里的 `dsh-external-dsh-novel-writer-*.tgz`（版本号最大、形如 0.1.7 的那个）下载。**严禁装旧版 v0.1.0 / v0.1.1**（它们会因设置卡缺 `options.key` 报错无法加载）。若 latest 跳转后没有可下载的 `.tgz`，就回 Releases 列表挑版本号最大的那个下载。**
+> **1）安装**：在终端执行 `dsh plugin --profile web add <上一步下载的 tgz 绝对路径>`。如果是首次用 DSH，先确认 `dsh` 命令在 PATH 里；若提示没有这个命令，告诉我，我改用绝对路径或帮你配置。**
+> **2）确认启用且版本正确**：执行 `dsh plugin list`，确认 `dsh-novel-writer` 在列、**已是 / 已升级到最新版本**（若显示的是旧版本号如 0.1.1，请重新按最新版覆盖安装一次）且已启用。**
+> **3）收尾提醒**：告诉用户「在 DSH 网页上刷新页面（必要时强制刷新 Ctrl+Shift+R），侧边栏出现『大肥鱼的小说工坊』就装好了；若没出现，检查 DSH 插件列表里该插件的『启用』开关是否为开」。**
 > **遇到权限/网络问题**（下载失败、写权限不足、命令不存在）时，先告诉我具体报错，再动手，不要静默跳过。**
 
 ### 🛒 方式二：从 Release 下载安装（动手型）
 
-1. **打开 Release 页**：访问 https://github.com/akira399/dsh-novel-writer/releases ，找到最新版本。
-2. **下载安装包**：在列表里点开「Assets」，下载 （注意不是 Source code 那两个 zip/tar.gz，是名字以 `dsh-external-` 开头、结尾是 `.tgz` 的那个）。
+1. **打开 Release 页**：访问 https://github.com/akira399/dsh-novel-writer/releases ，**只看最新发布的版本**（列表里 Release 名字带 `v0.1.7` 等版本号的，选编号最大的那个；最顶上通常就是最新）。
+2. **下载安装包**：点进**最新版**发布，在「Assets」里下载 `dsh-external-dsh-novel-writer-0.1.7.tgz`（版本号以你实际看到的最新版为准；注意不是 Source code 那两个 zip/tar.gz，是名字以 `dsh-external-` 开头、`.tgz` 结尾的）。
+   - ⚠️ **别下旧版**：旧版 `v0.1.0 / v0.1.1` 会报 `requires options.key` 加载失败，看到这两个版本号请忽略，选最大的版本号。
 3. **打开终端**：
    - Windows：按 `Win` 键输入 `powershell` 回车，或打开「Git Bash」（若你装过 Git）。
    - macOS：打开「终端」应用（Launchpad 里搜索 Terminal）。
    - Linux：打开任意终端。
-4. **执行安装命令**（把 `<文件路径>` 换成你刚下载文件的实际位置，例如桌面上的 `~/Desktop/dsh-external-dsh-novel-writer-0.1.1.tgz`）：
+4. **执行安装命令**（把 `<文件路径>` 换成你刚下载文件的实际位置，例如桌面上的 `~/Desktop/dsh-external-dsh-novel-writer-0.1.7.tgz`）：
 
    ```bash
    dsh plugin --profile web add <文件路径>
@@ -164,10 +170,10 @@
 git clone https://github.com/akira399/dsh-novel-writer.git
 cd dsh-novel-writer
 npm install
-npm run verify          # 自检：类型检查 + 291 个单元测试 + 构建，全过才继续
+npm run verify          # 自检：类型检查 + 303 个单元测试 + 构建，全过才继续
 npm run build           # 编译 host + client
-npm pack                # 生成 dsh-external-dsh-novel-writer-0.1.1.tgz
-dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.1.tgz
+npm pack                # 生成 dsh-external-dsh-novel-writer-0.1.7.tgz
+dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.7.tgz
 ```
 
 > ⚠️ 源码构建需要联网装依赖与较新 Node；若 `npm run build` 因缺 `bash` 报错，Windows 用户请用 Git Bash（项目构建脚本是 Shell）。

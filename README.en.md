@@ -29,23 +29,25 @@ A web-novel creation plugin for [DeepSeek Harness](https://deepseek-harness.gith
 > Prerequisites: a machine with **DeepSeek Harness (DSH)** installed and a terminal.
 > Works on Windows / macOS / Linux.
 
+> 🚨 **Install only the LATEST release** (currently **v0.1.7**). Do NOT install **v0.1.0 / v0.1.1** — those old builds fail to load in some DSH hosts with `keyed slot "settings.plugin.item" requires options.key` (the fix shipped in **v0.1.2**). Pick the highest version number (e.g. `dsh-external-dsh-novel-writer-0.1.7.tgz`).
+
 ### Option A — Let an AI install it (easiest)
 
 If your AI assistant can run commands, paste this into it:
 
-> **Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer) and confirm it is enabled. Steps:**
-> **1) Download**: get `https://github.com/akira399/dsh-novel-writer/releases/download/v0.1.1/dsh-external-dsh-novel-writer-0.1.1.tgz` (a prebuilt `.tgz`, no build needed). If unavailable, open `https://github.com/akira399/dsh-novel-writer/releases` and grab the latest `dsh-external-dsh-novel-writer-*.tgz`.**
-> **2) Install**: run `dsh plugin --profile web add <absolute path to that tgz>`.**
-> **3) Verify**: run `dsh plugin list` and confirm `dsh-novel-writer` is listed & enabled.**
-> **4) Remind the user**: refresh the DSH web page (Ctrl+Shift+R), and the sidebar entry "大肥鱼的小说工坊" should appear.**
+> **Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer) — LATEST version only — and confirm it is enabled. Steps:**
+> **0) Version (important)**: only install the newest release. Open `https://github.com/akira399/dsh-novel-writer/releases/latest` and download the `dsh-external-dsh-novel-writer-*.tgz` with the highest version number (e.g. 0.1.7). **Never install old v0.1.0 / v0.1.1** (they fail with `requires options.key`). If latest has no `.tgz`, go to the Releases list and pick the highest version.**
+> **1) Install**: run `dsh plugin --profile web add <absolute path to that tgz>`.**
+> **2) Verify**: run `dsh plugin list` and confirm `dsh-novel-writer` is listed at the latest version & enabled.**
+> **3) Remind the user**: refresh the DSH web page (Ctrl+Shift+R), and the sidebar entry "大肥鱼的小说工坊" should appear.**
 > **On any permission/network error, report the exact error first — do not silently skip.**
 
 ### Option B — Manual install from Release
 
 ```bash
-# 1) Download dsh-external-dsh-novel-writer-0.1.1.tgz from
-#    https://github.com/akira399/dsh-novel-writer/releases
-#    (pick the .tgz whose name starts with "dsh-external-", not Source code archives)
+# 1) Download the LATEST dsh-external-dsh-novel-writer-*.tgz (highest version, e.g. 0.1.7) from
+#    https://github.com/akira399/dsh-novel-writer/releases/latest
+#    (pick the .tgz whose name starts with "dsh-external-", not Source code archives; avoid v0.1.0/v0.1.1)
 # 2) Open a terminal (PowerShell on Windows / Terminal on macOS / any on Linux)
 dsh plugin --profile web add <path-to-downloaded-tgz>
 # 3) Confirm
