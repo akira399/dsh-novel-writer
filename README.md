@@ -125,8 +125,8 @@
 
 ### 🛒 方式二：从 Release 下载安装（动手型）
 
-1. **打开 Release 页**：访问 https://github.com/akira399/dsh-novel-writer/releases ，找到最新版本（如 v0.1.1）。
-2. **下载安装包**：在列表里点开「Assets」，下载 `dsh-external-dsh-novel-writer-0.1.1.tgz`（注意不是 Source code 那两个 zip/tar.gz，是名字以 `dsh-external-` 开头、结尾是 `.tgz` 的那个）。
+1. **打开 Release 页**：访问 https://github.com/akira399/dsh-novel-writer/releases ，找到最新版本。
+2. **下载安装包**：在列表里点开「Assets」，下载 （注意不是 Source code 那两个 zip/tar.gz，是名字以 `dsh-external-` 开头、结尾是 `.tgz` 的那个）。
 3. **打开终端**：
    - Windows：按 `Win` 键输入 `powershell` 回车，或打开「Git Bash」（若你装过 Git）。
    - macOS：打开「终端」应用（Launchpad 里搜索 Terminal）。
