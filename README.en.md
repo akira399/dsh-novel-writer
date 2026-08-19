@@ -26,54 +26,32 @@ A web-novel creation plugin for [DeepSeek Harness](https://deepseek-harness.gith
 
 ## Install
 
-> Prerequisites: a machine with **DeepSeek Harness (DSH)** installed and a terminal.
-> Works on Windows / macOS / Linux.
+> Needs DSH installed (Windows/macOS/Linux; runtime Node ≥18). **Install only the LATEST release** (v0.1.7) — old v0.1.0/v0.1.1 fail to load with `requires options.key`.
 
-> 🚨 **Install only the LATEST release** (currently **v0.1.7**). Do NOT install **v0.1.0 / v0.1.1** — those old builds fail to load in some DSH hosts with `keyed slot "settings.plugin.item" requires options.key` (the fix shipped in **v0.1.2**). Pick the highest version number (e.g. `dsh-external-dsh-novel-writer-0.1.7.tgz`).
+### A — Let an AI install it (recommended)
+Paste this to any command-capable AI:
 
-### Option A — Let an AI install it (easiest)
+> Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer), **LATEST version only**. From `https://github.com/akira399/dsh-novel-writer/releases/latest` download the newest `dsh-external-dsh-novel-writer-*.tgz` (highest version; not v0.1.0/v0.1.1) → run `dsh plugin --profile web add <absolute tgz path>` → confirm with `dsh plugin list` → tell me to refresh the DSH page (Ctrl+Shift+R) so the sidebar entry appears. Report any error first.
 
-If your AI assistant can run commands, paste this into it:
-
-> **Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer) — LATEST version only — and confirm it is enabled. Steps:**
-> **0) Version (important)**: only install the newest release. Open `https://github.com/akira399/dsh-novel-writer/releases/latest` and download the `dsh-external-dsh-novel-writer-*.tgz` with the highest version number (e.g. 0.1.7). **Never install old v0.1.0 / v0.1.1** (they fail with `requires options.key`). If latest has no `.tgz`, go to the Releases list and pick the highest version.**
-> **1) Install**: run `dsh plugin --profile web add <absolute path to that tgz>`.**
-> **2) Verify**: run `dsh plugin list` and confirm `dsh-novel-writer` is listed at the latest version & enabled.**
-> **3) Remind the user**: refresh the DSH web page (Ctrl+Shift+R), and the sidebar entry "大肥鱼的小说工坊" should appear.**
-> **On any permission/network error, report the exact error first — do not silently skip.**
-
-### Option B — Manual install from Release
+### B — Manual install
+Download the newest `dsh-external-dsh-novel-writer-*.tgz` from https://github.com/akira399/dsh-novel-writer/releases/latest, then:
 
 ```bash
-# 1) Download the LATEST dsh-external-dsh-novel-writer-*.tgz (highest version, e.g. 0.1.7) from
-#    https://github.com/akira399/dsh-novel-writer/releases/latest
-#    (pick the .tgz whose name starts with "dsh-external-", not Source code archives; avoid v0.1.0/v0.1.1)
-# 2) Open a terminal (PowerShell on Windows / Terminal on macOS / any on Linux)
-dsh plugin --profile web add <path-to-downloaded-tgz>
-# 3) Confirm
-dsh plugin list
+dsh plugin --profile web add <path-to-tgz>
+dsh plugin list        # dsh-novel-writer listed = success
 ```
 
-If `dsh` is "not found", make sure DSH is installed and `dsh` is on PATH. On a "permission denied" error, run the terminal as administrator (Windows) or prefix with `sudo` (macOS/Linux).
-
-### Option C — Build from source (advanced)
-
-> Runtime requires **Node.js ≥ 18** (release tarball is prebuilt — no build needed).
-> Building from source requires **Node.js ≥ 22** and **Git**:
+### C — Build from source (advanced)
+Needs Node ≥22 and Git:
 
 ```bash
-git clone https://github.com/akira399/dsh-novel-writer.git
-cd dsh-novel-writer
-npm install
-npm run verify          # typecheck + 291 tests + build
-npm run build
-npm pack                # produces dsh-external-dsh-novel-writer-0.1.1.tgz
-dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.1.tgz
+git clone https://github.com/akira399/dsh-novel-writer.git && cd dsh-novel-writer
+npm install && npm run verify && npm run build && npm pack
+dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.7.tgz
 ```
+(Use Git Bash on Windows for the shell build script.)
 
-> On Windows the build script is Shell — use Git Bash if `bash` is missing.
-
-After any install method: the sidebar "大肥鱼的小说工坊" entry, the settings card, the `novel-writing-workflow` skill, and the "大肥鱼的小说工坊" agent preset (new-session mode picker) all become available.
+**After install**: the sidebar "大肥鱼的小说工坊" entry and the settings card appear; if not, refresh/restart DSH and check the plugin is enabled.
 
 ## Quick start
 
