@@ -1407,6 +1407,9 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
       if (el.offsetHeight < 4 || el.offsetWidth < 4) continue
       const style = getComputedStyle(el)
       if (style.position !== 'fixed') continue
+      // 跳过全屏 fixed 层（如 dsh-better-sidebar 的 [data-dsh-panel-host]、皮肤全屏层）：
+      // 它们是定位宿主而非"条"，误判会把抽屉推出屏幕并来回振荡
+      if (el.offsetWidth >= vw * 0.95 && el.offsetHeight >= vh * 0.6) continue
       const rect = el.getBoundingClientRect()
       // 与抽屉有实际重叠（水平 + 垂直均 >8px）
       const overlapW = Math.min(drawerRect.right, rect.right) - Math.max(drawerRect.left, rect.left)
@@ -1429,6 +1432,7 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
    */
   const applySize = (): void => {
     if (!rootEl) return
+    const vw = window.innerWidth
     const vh = window.innerHeight
     const overlays = detectOverlays()
     let bottomNeed = 0
@@ -1443,9 +1447,11 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
         const need = vh - overlay.rect.top
         if (need > bottomNeed) bottomNeed = need
       }
-      if (isTall) {
-        // 全高竖条（聊天侧栏）：若其右缘与抽屉右缘相邻 → 抽屉左移露出条
-        if (overlay.rect.right >= rootEl.getBoundingClientRect().right - 8) {
+      if (isTall && overlay.rect.width < vw * 0.95) {
+        // 全高竖条（聊天侧栏）：若其右缘贴近视口右缘 → 抽屉左移露出条。
+        // 判定基准用视口右缘而非抽屉自身 rect：抽屉位置是本函数的输出，
+        // 用输出当输入会造成反馈振荡（检测到→挪开→检测不到→挪回，无限循环）
+        if (overlay.rect.right >= vw - 8) {
           if (overlay.rect.width > rightNeed) rightNeed = overlay.rect.width
         }
       }
@@ -1458,9 +1464,12 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     rootEl.style.zIndex = String(targetZ)
     // 角标诊断（badge，pointerEvents:none 不影响交互）
     if (badgeEl) {
-      badgeEl.textContent = overlays.length > 0
+      // 仅在文本变化时写入：无条件赋 textContent 会替换文本节点（childList 变更），
+      // 而抽屉自己的 MutationObserver 正监听 body 子树，会形成每 300ms 的 applySize 自触发循环
+      const badgeText = overlays.length > 0
         ? `小说工坊 ✓ 避让:底${bottom}px 右${rightNeed}px 重叠${overlays.length} z${targetZ}`
         : '小说工坊 ✓'
+      if (badgeEl.textContent !== badgeText) badgeEl.textContent = badgeText
     }
   }
 

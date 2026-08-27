@@ -10,7 +10,11 @@ export const ENTRY_SELECTOR = '[data-dsh-novel-writer-entry]'
 const ICON = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5h12M2 8h12M2 12.5h7"/><circle cx="12" cy="12.5" r="1.8"/></svg>`
 
 function sidebarRoot(): HTMLElement | undefined {
-  const column = document.querySelector<HTMLElement>('[data-pane="sidebar"], [class*="sidebarCol"]')
+  // 兼容标准 web 壳（data-pane / sidebarCol）与 DSH Desktop 桌面壳
+  //（dshDesktopSidebarSurface / dshDesktopUpstreamSidebar）两套 DOM 结构
+  const column = document.querySelector<HTMLElement>(
+    '[data-pane="sidebar"], [class*="sidebarCol"], [class*="dshDesktopSidebarSurface"], [class*="dshDesktopUpstreamSidebar"]',
+  )
   if (column === null) return undefined
   const logoOwner = column.querySelector<HTMLElement>('[class*="logoRow"]')?.parentElement
   return logoOwner ?? (column.firstElementChild as HTMLElement | undefined)
