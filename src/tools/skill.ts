@@ -13,7 +13,9 @@ import { loadPromptLibrary, renderPromptTemplate } from '../core/prompts/index.t
 import { jsonOutput } from './json.ts'
 
 export const SKILL_NAME = 'novel-writing-workflow'
-const SKILL_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'skills', SKILL_NAME)
+// 产物位于 lib/tools/（比源码目录深一层），资源仍在包根 assets/，故需要两级 '..'。
+// 只写一级会解析到 lib/assets/（不存在），技能注册与提示词加载都会静默失败。
+const SKILL_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'skills', SKILL_NAME)
 
 /** 从 SKILL.md 解析 frontmatter（name/description/whenToUse）。 */
 function parseSkillFrontmatter(text: string): { data: Record<string, string>; body: string } {
@@ -60,7 +62,7 @@ function asJson(value: unknown): JsonValue {
 
 /** 注册 novel_prompts 工具（提示词库浏览/渲染）。 */
 export function registerPromptsTool(ctx: Context): () => void {
-  const promptsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+  const promptsDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'prompts')
   return ctx.tools.register(defineTool({
     name: 'novel_prompts',
     description: '浏览/渲染内置提示词库（创作模板/文风预设/去AI味/润色/诊断）。' +

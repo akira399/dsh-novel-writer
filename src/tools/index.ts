@@ -14,7 +14,9 @@ import { registerExtrasTools } from './extras.ts'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const PROMPTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+// 产物位于 lib/tools/（比源码目录深一层），资源仍在包根 assets/，故需要两级 '..'。
+// 只写一级会解析到 lib/assets/（不存在），loadPromptLibrary 的 readdir 兜底会把它静默成空列表。
+const PROMPTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'prompts')
 
 /** 注册全部工具，返回幂等聚合 disposer（重复调用安全）。 */
 export function registerNovelTools(ctx: Context, deps: NovelServices): () => void {
