@@ -49,6 +49,16 @@ const ENTRY_ID = 'dsh-novel-writer'
 const TAB_ID = '@dsh-external/dsh-novel-writer'
 const FOOTER_ID = '@dsh-external/dsh-novel-writer-sidebar'
 
+/**
+ * 侧边栏入口的 UI 版本戳（渲染到 `data-nw-ui`）。
+ *
+ * 用途：客户端 bundle 由宿主按 rev 缓存，改版后难以判断浏览器到底加载了哪一版。
+ * 排查时在侧边栏入口上「检查元素」，看 `data-nw-ui` 即可确认。
+ * - v2：去掉 emoji（点击热区与视觉对齐）、加 hover 反馈、消费 owner props `wide`。
+ * - v3：修掉 `font: 'inherit'` 简写覆盖 fontSize 的问题，抽屉补 border-box 描边。
+ */
+const SIDEBAR_UI_VERSION = 'v3'
+
 /** 与 src/settings.ts 的 Config 对应的表单值形状。 */
 interface SettingsShape {
   enabled?: boolean
@@ -237,6 +247,8 @@ function NovelSidebarAction({ onClick, wide = true }: { onClick: () => void; wid
       type: 'button',
       title: '大肥鱼的小说工坊',
       'aria-label': '大肥鱼的小说工坊',
+      // 版本戳：便于确认浏览器是否已加载新构建（右键检查元素可见 data-nw-ui）
+      'data-nw-ui': SIDEBAR_UI_VERSION,
       onClick,
       onMouseEnter: () => setHover(true),
       onMouseLeave: () => setHover(false),
@@ -258,13 +270,15 @@ function NovelSidebarAction({ onClick, wide = true }: { onClick: () => void; wid
         borderRadius: '6px',
         background: hover ? 'rgba(127,127,127,.16)' : 'transparent',
         cursor: 'pointer',
+        // 注意：不要用 `font` 简写——它会重置 fontSize/lineHeight（此前因此文字尺寸不受控）
+        fontFamily: 'inherit',
         fontSize: '13px',
         lineHeight: '1',
         color: 'inherit',
-        font: 'inherit',
         textAlign: 'left',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
+        pointerEvents: 'auto',
         transition: 'background-color .12s ease',
       },
     },

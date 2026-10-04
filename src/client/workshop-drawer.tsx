@@ -1279,6 +1279,9 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     el.style.cssText = [
       'position:fixed', 'top:0', 'right:0', 'bottom:0', 'width:380px',
       'background:#fff',
+      // 必须 border-box：抽屉贴 right:0，默认 content-box 时 border 会让盒子总宽
+      // 超出声明的 width，左边缘（含描边）被推出视口 → 描边看不见。
+      'boxSizing:border-box',
       'borderLeft:1px solid #d0d5dd',
       'boxShadow:-4px 0 16px rgba(0,0,0,.15)',
       'zIndex:2147483647',

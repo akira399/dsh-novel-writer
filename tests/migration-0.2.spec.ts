@@ -117,9 +117,21 @@ describe('smoke — 构建产物与契约一致性', () => {
     expect(code).toContain('onMouseEnter')
   })
 
-  it('工作台抽屉带左边框（与主内容区分隔）', () => {
+  it('工作台抽屉带左边框，且用 border-box 保证描边可见', () => {
     const src = readFileSync(join(ROOT, 'src', 'client', 'workshop-drawer.tsx'), 'utf8')
     expect(src).toContain("'borderLeft:1px solid #d0d5dd'")
+    // 关键：抽屉贴 right:0，默认 content-box 会把 1px border 推到盒子外并挤出视口
+    // → 实际表现是「加了边框却看不见」。必须同时声明 border-box。
+    expect(src).toContain("'boxSizing:border-box'")
+  })
+
+  it('侧边栏入口带 UI 版本戳（便于确认浏览器加载的是新构建）', () => {
+    const src = readFileSync(join(ROOT, 'src', 'client', 'index.ts'), 'utf8')
+    expect(src).toContain("'data-nw-ui': SIDEBAR_UI_VERSION")
+    expect(src).toContain("const SIDEBAR_UI_VERSION = 'v")
+    // 不要用 font 简写：它会重置 fontSize/lineHeight（此前导致文字尺寸不受控）
+    const code = src.replace(/\/\*\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(code).not.toContain("font: 'inherit'")
   })
 
   it('构建出的 lib/client.js 是合法 ModuleLoader 单元：evaluate 后暴露 apply/inject', async () => {
