@@ -794,3 +794,53 @@
 **遗留事项**：
 - [ ] 未能在隔离 profile 做端到端安装验证（桌面版未暴露独立 `dsh` CLI；asar 内 `node_modules` 提取约 347MB）。建议用户在 DSH 里实装后确认设置页签与侧边栏入口。
 - [ ] `scripts/build.sh` 依赖 bash，Windows 需 Git Bash（本次以 `tsc -p tsconfig.build.json` 等价验证）。
+## 模块 19：可移植构建 + 真实服务端到端验证 + assets 解析修复
+
+**日期**：2026-10-04
+**背景**：模块 18 迁移后遗留两件事：①`scripts/build.sh` 依赖 bash，Windows 上 `npm run build` 直接失败；
+②端到端安装验证缺失（桌面版未暴露独立 dsh CLI）。本模块把 ②用「真实服务在进程内装配」的方式补齐，
+并顺带查出并修复了一个**从 0.1.x 就存在的真实 bug**。
+
+**范围**：
+
+1. **可移植构建**：新增 `scripts/build.mjs`（Node 实现，三平台无需 bash）。
+   直接 `require.resolve('typescript/bin/tsc')` 并用当前 node 执行，绕开
+   `node_modules/.bin` 的平台差异（POSIX 脚本 vs Windows `.cmd`，后者必须经 shell
+   且有 DEP0190 告警）。`package.json` 的 `build`/`build:host` 改指 node；
+   新增 `build:host:bash` 保留旧入口，`scripts/build.sh` 不删（dev_build_plugin 仍调它）。
+
+2. **真实服务端到端验证**（`tests/e2e-assembly.spec.ts`）：不 mock 任何东西，直接
+   `new` 与桌面版同版本的 `ToolRuntime` / `SkillRegistry`（真实 DSH 0.2.0-rc.2 实现），
+   像宿主一样调用 apply()。覆盖：apply 跑通、每个工具定义通过真实 schema 校验、
+   `ctx.skills.register` 字段被真实 SkillRegistry 接受、enabled=false 门禁、
+   工具 execute 可用、数据目录副作用。
+   - 额外一组用例**加载 lib/index.js（构建产物）**而非 src/，专门验证构建后布局。
+
+3. **修复 assets 解析 bug（`resolveAssetsDir`）**：`src/**` 里 8 处资产路径固定写作
+   `'..','assets'`，该写法只在「模块位于包根下一级」的打包布局下成立。走 tsc 的构建产物里
+   模块位于 `lib/<dir>/`，到 `assets/` 需要上两级 → 构建产物中**提示词库、技能、预设、
+   示例书籍全部解析失败并静默降级**（`novel_prompts` 返回 `ok:true, value:[]`）。
+   修法：`src/core/util.ts` 新增 `resolveAssetsDir(fromModuleUrl)`，按
+   `['../../assets','../assets','./assets']` 候选 + 目录存在性解析并缓存；
+   8 处调用点（tools/index、tools/extras、tools/skill、presets、routes×4）统一改用它。
+
+**验收证据**：
+- `npx tsc --noEmit` / `-p tsconfig.client.json --noEmit`：0 错误
+- `npm run build`（新 Node 脚本，Windows 无 bash）：全绿
+- `npx vitest run`：**33 文件 / 331 测试全通过**（自 320 → 331）
+- `tests/e2e-assembly.spec.ts`：7 例，含「lib/ 布局下提示词库非空（>30 条）」与
+  「技能正文来自 SKILL.md」两个仅对构建产物生效的回归断言
+- `tests/assets-resolver.spec.ts`：4 例，钉住 src/lib/包根三种布局解析到同一目录
+- `npm pack --dry-run`：382 文件，含 lib/**（含 .d.ts）、assets/prompts 62、
+  assets/skills 1、assets/presets 2、assets/samples 3
+
+**Code Review 结论（通过 ✅）**：
+1. ✅ 测试有效性自检：src/ 下跑的用例**看不到**该 assets bug（src/x/y.ts 到 assets 恰好是
+   `'..','assets'`），因此专门加了加载 lib/ 的用例——否则回归测试是假绿
+2. ✅ 不删旧入口：`scripts/build.sh` 保留，`build:host:bash` 可回退
+3. ✅ 端到端不含 mock：ToolRuntime/SkillRegistry 是运行时真实实现，能捕捉契约漂移
+4. ✅ 修复是收敛的：新增单一解析函数 + 8 处调用点，无行为扩散
+
+**遗留事项**：
+- [ ] 仍未在真实 DSH profile 中实装验证（本机桌面版无独立 CLI）。已产出
+  `dsh-external-dsh-novel-writer-0.2.0.tgz` 供实装：`dsh plugin --profile desktop add <tgz>`。

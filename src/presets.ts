@@ -5,12 +5,12 @@
  * 仿 dsh-liangshen 同步思路：只写不删，升级自动更新）。
  */
 import { cp, mkdir, readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
+import { resolveAssetsDir } from './core/util.ts'
 
 const PRESET_ID = 'novel-writer'
-const PRESET_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'presets', PRESET_ID)
+const PRESET_DIR = join(resolveAssetsDir(import.meta.url), 'presets', PRESET_ID)
 
 /** 同步预设到 harness home（失败仅告警，不阻断装配）。 */
 export async function syncAgentPreset(ctx: Context, dshHome: string): Promise<{ target: string; files: number } | null> {

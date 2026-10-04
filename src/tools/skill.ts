@@ -8,13 +8,14 @@ import type {} from '@deepseek-ai/dsh-skill'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { resolveAssetsDir } from '../core/util.ts'
 import { loadPromptLibrary, renderPromptTemplate } from '../core/prompts/index.ts'
 import { jsonOutput } from './json.ts'
 
 export const SKILL_NAME = 'novel-writing-workflow'
-const SKILL_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'skills', SKILL_NAME)
+const ASSETS_DIR = resolveAssetsDir(import.meta.url)
+const SKILL_DIR = join(ASSETS_DIR, 'skills', SKILL_NAME)
 
 /** 从 SKILL.md 解析 frontmatter（name/description/whenToUse）。 */
 function parseSkillFrontmatter(text: string): { data: Record<string, string>; body: string } {
@@ -61,7 +62,7 @@ function asJson(value: unknown): JsonValue {
 
 /** 注册 novel_prompts 工具（提示词库浏览/渲染）。 */
 export function registerPromptsTool(ctx: Context): () => void {
-  const promptsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+  const promptsDir = join(ASSETS_DIR, 'prompts')
   return ctx.tools.register(defineTool({
     name: 'novel_prompts',
     description: '浏览/渲染内置提示词库（创作模板/文风预设/去AI味/润色/诊断）。' +

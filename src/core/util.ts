@@ -4,6 +4,9 @@
  * 职责：无状态、无 IO 的通用工具；所有函数可独立单测。
  * 命名/语义对齐夏瑾工坊原实现（splitKeywords / generateId），便于移植对照。
  */
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 
 /** 生成稳定唯一 id（夏瑾 generateId 语义：`<prefix>_<ts36>_<rand6>`）。 */
 export function newId(prefix: string): string {
@@ -53,3 +56,36 @@ export function estimateTokens(text: string): number {
   }
   return cjk + Math.ceil(other / 4)
 }
+
+/**
+ * 解析随包分发的 `assets/` 目录。
+ *
+ * 两种运行布局下的模块位置不同，必须都支持：
+ *  - 源码/测试（vitest 直跑 TS）：`<root>/src/<dir>/x.ts` → `assets` 在 `../../assets`
+ *  - 构建产物（tsc → lib/）：`<root>/lib/<dir>/x.js` → `assets` 在 `../../assets`
+ *  - Rspack 打包（import.meta.url 被重写为 `<root>/lib/client.js` 之类）→ `../assets`
+ *
+ * 之前固定用 `'..','assets'`（只对打包布局成立），导致构建产物里提示词库、
+ * 技能、预设、示例书籍全部解析到不存在的 `lib/assets/**` 而静默降级为空。
+ * 这里按「候选路径 + 目录存在性」解析，并缓存结果。
+ */
+export function resolveAssetsDir(fromModuleUrl: string): string {
+  const here = fileURLToPath(new URL('.', fromModuleUrl))
+  const cached = assetsDirCache.get(here)
+  if (cached !== undefined) return cached
+
+  for (const candidate of ['../../assets', '../assets', './assets']) {
+    const dir = resolve(here, candidate)
+    if (existsSync(dir)) {
+      assetsDirCache.set(here, dir)
+      return dir
+    }
+  }
+  // 都没命中时回退到「上两级」布局，让调用方拿到一个可诊断的路径
+  const fallback = resolve(here, '../../assets')
+  assetsDirCache.set(here, fallback)
+  return fallback
+}
+
+/** 解析缓存（按模块目录）。 */
+const assetsDirCache = new Map<string, string>()

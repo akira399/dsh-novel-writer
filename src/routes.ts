@@ -16,11 +16,12 @@ import { readOptional } from './core/atomic-file.ts'
 import { asResult } from './core/lorebook/service.ts'
 import { buildWritePrompt } from './core/write-prompt.ts'
 import { genreLabel } from './core/genres.ts'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { resolveAssetsDir } from './core/util.ts'
+import { join } from 'node:path'
 
 const PREFIX = '/api/novel-writer'
 const FENCE_HEADER = 'x-dsh-novel-writer'
+const ASSETS_DIR = resolveAssetsDir(import.meta.url)
 
 /** 路由路径解析（纯函数，可单测）。返回 segments 与具名参数。 */
 export function parseNovelPath(url: string | undefined): { segments: string[]; projectId?: string; section?: string; noText?: string } {
@@ -93,7 +94,7 @@ export function registerNovelRoutes(ctx: Context, assembly: NovelAssembly): void
           if (!svc) return
           try {
             const book = await svc.novel.createProject('青云问道', 'fantasy')
-            const dir = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'samples', 'demo-book', 'lorebook')
+            const dir = join(ASSETS_DIR, 'samples', 'demo-book', 'lorebook')
             const entries = JSON.parse(await readOptional(join(dir, 'entries.json')) ?? '{"data":[]}')
             const list = Array.isArray(entries) ? entries : (entries as { data: unknown[] }).data ?? []
             const result = await asResult(() => svc.lore.importEntries({ content: JSON.stringify(list), book_id: book.id }))
@@ -214,7 +215,7 @@ export function registerNovelRoutes(ctx: Context, assembly: NovelAssembly): void
           const bookId = segments[2]!
           try {
             const { loadPromptLibrary, renderPromptTemplate } = await import('./core/prompts/index.js')
-            const promptsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+            const promptsDir = join(ASSETS_DIR, 'prompts')
             const library = await loadPromptLibrary(promptsDir)
             const template = library.find((t) => t.id === 'lorebook-autogen')
             if (!template) return fail(res, 500, 'IO_FAILURE', '缺少生成提示词模板')
@@ -349,7 +350,7 @@ export function registerNovelRoutes(ctx: Context, assembly: NovelAssembly): void
             }
             if (!text) return fail(res, 400, 'INVALID_FIELD_TYPE', '没有可润色的正文内容')
             const { loadPromptLibrary, renderPromptTemplate } = await import('./core/prompts/index.js')
-            const promptsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+            const promptsDir = join(ASSETS_DIR, 'prompts')
             const library = await loadPromptLibrary(promptsDir)
             const template = library.find((t) => t.id === 'polish-literary')
             if (!template) return fail(res, 500, 'IO_FAILURE', '缺少润色提示词模板')

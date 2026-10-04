@@ -114,8 +114,9 @@ Local-only storage; audit-logged writes; LLM helper calls reuse the session's mo
 
 ```bash
 npm run typecheck   # host + client
-npm test            # vitest (320 specs)
-npm run build       # tsc host + tsdown client (scripts/build.sh needs bash; use Git Bash on Windows)
+npm test            # vitest (331 specs)
+npm run build       # tsc host + tsdown client (pure Node; no bash needed on Windows)
+npm run build:host:bash   # only when a host hard-codes `bash scripts/build.sh`
 node scripts/simulate-1m.mjs   # million-word consistency stress test
 ```
 

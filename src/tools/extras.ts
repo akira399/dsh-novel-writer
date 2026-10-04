@@ -18,10 +18,10 @@ import { buildRevisionResult } from '../core/revision/index.ts'
 import { exportBook } from '../core/export/index.ts'
 import { jsonOutput } from './json.ts'
 import { writeFile, mkdir } from 'node:fs/promises'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { resolveAssetsDir } from '../core/util.ts'
 
-const PROMPTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+const PROMPTS_DIR = join(resolveAssetsDir(import.meta.url), 'prompts')
 
 export interface ExtrasToolDeps {
   novel: NovelService

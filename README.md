@@ -303,8 +303,9 @@ A：生成后是「待确认」的条目，写入前你可编辑/删除；注入
 
 ```bash
 npm run typecheck   # host + client 双段
-npm test            # vitest（320 例）
-npm run build       # tsc host + tsdown client（scripts/build.sh 需 bash；Windows 用 Git Bash）
+npm test            # vitest（331 例）
+npm run build       # tsc host + tsdown client（纯 Node，Windows 无需 bash）
+npm run build:host:bash   # 仅当宿主固定调用 bash scripts/build.sh 时使用
 node scripts/simulate-1m.mjs   # 百万字一致性压测
 ```
 

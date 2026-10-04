@@ -11,10 +11,10 @@ import { registerPromptsTool } from './skill.ts'
 import { registerGuideTools } from './guide.ts'
 import { registerQualityTools } from './quality.ts'
 import { registerExtrasTools } from './extras.ts'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { resolveAssetsDir } from '../core/util.ts'
 
-const PROMPTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'prompts')
+const PROMPTS_DIR = join(resolveAssetsDir(import.meta.url), 'prompts')
 
 /** 注册全部工具，返回幂等聚合 disposer（重复调用安全）。 */
 export function registerNovelTools(ctx: Context, deps: NovelServices): () => void {
