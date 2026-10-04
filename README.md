@@ -110,12 +110,13 @@
 
 ## 📦 安装
 
-> 需已装 DSH（跨 Windows/macOS/Linux；运行时 Node ≥18）。**务必安装最新版**（当前 v0.1.7），旧版 v0.1.0/v0.1.1 会在部分宿主报 `requires options.key` 无法加载。
+> 需已装 DSH（跨 Windows/macOS/Linux；运行时 Node ≥18）。**本版本要求 DSH Desktop / CLI `0.2.0-rc.2` 或更高**（`@deepseek-ai/cordis` 4.0.4）；
+> v0.1.x 系列是给 `0.1.0-rc.6` 的旧版，在 0.2.0 上会加载失败（见下方「版本对照」）。
 
 ### ① 一句话让 AI 装（推荐）
 把下面这段发给能执行命令的 AI：
 
-> 帮我安装 DSH 插件「大肥鱼的小说工坊」(dsh-novel-writer)，**只装最新版**。步骤：从 `https://github.com/akira399/dsh-novel-writer/releases/latest` 下载最新的 `dsh-external-dsh-novel-writer-*.tgz`（版本号最大的那个；别下 v0.1.0/v0.1.1）→ 执行 `dsh plugin --profile web add <该 tgz 绝对路径>` → `dsh plugin list` 确认在列且已启用 → 提醒我刷新 DSH 页面（Ctrl+Shift+R）后侧边栏出现「大肥鱼的小说工坊」。遇到报错先告诉我再处理。
+> 帮我安装 DSH 插件「大肥鱼的小说工坊」(dsh-novel-writer)，**只装最新版 0.2.x**。步骤：从 `https://github.com/akira399/dsh-novel-writer/releases/latest` 下载最新的 `dsh-external-dsh-novel-writer-*.tgz`（版本号最大的那个；别下 v0.1.x，那是给旧版 DSH 的）→ 执行 `dsh plugin --profile web add <该 tgz 绝对路径>` → `dsh plugin list` 确认在列且已启用 → 提醒我刷新 DSH 页面（Ctrl+Shift+R）。遇到报错先告诉我再处理。
 
 ### ② 手动下载装
 从 https://github.com/akira399/dsh-novel-writer/releases/latest 下载最新的 `dsh-external-dsh-novel-writer-*.tgz`，然后：
@@ -131,29 +132,39 @@ dsh plugin list        # 看到 dsh-novel-writer 即成功
 ```bash
 git clone https://github.com/akira399/dsh-novel-writer.git && cd dsh-novel-writer
 npm install && npm run verify && npm run build && npm pack
-dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.7.tgz
+dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.2.0.tgz
 ```
 （Windows 用 Git Bash 跑构建脚本）
 
-**装完**：侧边栏出现「大肥鱼的小说工坊」、设置页出现同名卡片即完成；没有就刷新页面/重启 DSH 并在插件列表确认已启用。
+**装完**：侧边栏出现「大肥鱼的小说工坊」、设置 → 插件 出现同名页签即完成；没有就刷新页面/重启 DSH 并在插件列表确认已启用。
 
 ### ✅ 三种方式装完后，确认「能用全部功能」
 
 不论用哪种方式，装完都应看到👇，即可正常使用本项目所有功能：
 
-- **侧边栏**出现「大肥鱼的小说工坊」入口（工作台抽屉：项目/创建/写章/润色/诊断/导入/世界书…）
-- **设置 → 插件配置**出现「大肥鱼的小说工坊」卡片（启用开关 + 数据目录，默认 `~/.dsh/dsh-novel-writer`）
+- **侧边栏底部**出现「大肥鱼的小说工坊」入口（工作台抽屉：项目/创建/写章/润色/诊断/导入/世界书…）
+- **设置 → 插件**出现「大肥鱼的小说工坊」页签（启用开关 + 数据目录，默认 `~/.dsh/dsh-novel-writer`）
 - **新会话**自动带出技能 `novel-writing-workflow`（创作全流程指导）
 - **新建会话的模式选择器**里可选中预设「大肥鱼的小说工坊」（对话驱动创作）
 
 > 💡 若某块没出现：先刷新页面；不行就重启 DSH，再在「设置 → 插件」里确认该插件「启用」开关是打开的。
 
+### 📌 版本对照（务必对号入座）
+
+| 插件版本 | 目标 DSH | settings 命名空间 | 设置页位置 |
+| --- | --- | --- | --- |
+| **0.2.0**（当前） | **0.2.0-rc.2+**（cordis 4.0.4） | `dsh-novel-writer` | 设置 → 插件 → 页签 |
+| 0.1.x（旧） | 0.1.0-rc.6 | `dsh-novel-writer` | 设置卡（`settings.plugin.item`，**该 slot 已移除**） |
+
+0.2.0 的适配要点：DSH 删除了 `@deepseek-ai/dsh-client-runtime` 包与 `settingsNamespace()`/`settings.register()` API，
+并移除了 `settings.plugin.item` slot；本版改用 `ctx.configForms` + `settings.plugins.tab` / `sidebar.footer.action` slot。
+
 --
 
 ### 装好后
 
-- 侧边栏出现「**大肥鱼的小说工坊**」入口（工作台抽屉）
-- 设置 → 插件配置 → **大肥鱼的小说工坊**（启用开关 + 数据目录）
+- 侧边栏底部出现「**大肥鱼的小说工坊**」入口（工作台抽屉）
+- 设置 → 插件 → **大肥鱼的小说工坊**（启用开关 + 数据目录）
 - 新会话出现技能 `novel-writing-workflow`（创作全流程方法）
 - agent 预设「大肥鱼的小说工坊」可选（新建会话模式选择器）
 
@@ -255,6 +266,10 @@ projects/      项目（book.json + docs/ + chapters/ + audit.jsonl + ledger.jso
 | dataDir | `~/.dsh/dsh-novel-writer` | 数据根目录 |
 | uiHidden | false | 隐藏侧边栏「大肥鱼的小说工坊」入口（存于浏览器本地，任何环境可用；即时生效） |
 
+> 设置入口：**设置 → 插件 → 大肥鱼的小说工坊**（0.2.0 起由 `settings.plugins.tab` 提供）。
+> 这些字段也可直接写在 profile 的 `cordis.patch.yml` 里；写入后会重新装配插件（普通配置变更走
+> Loader 的常规更新生命周期，无需手动重启）。
+
 项目级（创建时/模板复制保留）：**27 题材**、每章字数目标（默认 2000-4000）、风格（视角/禁用词/AI 味词）、阶段门禁开关。
 
 ---
@@ -288,10 +303,14 @@ A：生成后是「待确认」的条目，写入前你可编辑/删除；注入
 
 ```bash
 npm run typecheck   # host + client 双段
-npm test            # vitest（291 例）
-npm run build       # tsc host + tsdown client
+npm test            # vitest（320 例）
+npm run build       # tsc host + tsdown client（scripts/build.sh 需 bash；Windows 用 Git Bash）
 node scripts/simulate-1m.mjs   # 百万字一致性压测
 ```
+
+目标 DSH 版本：**0.2.0-rc.2**（`@deepseek-ai/cordis` 4.0.4）。
+升级 DSH 时请同步 `package.json` 的 `peerDependencies` / `devDependencies` 与
+`dsh.client.inject`，并重跑 `npm run verify`。
 
 模块开发纪律：每模块 → 单测 → 复盘（见 [docs/MODULE-LOG.md](./docs/MODULE-LOG.md)）。
 

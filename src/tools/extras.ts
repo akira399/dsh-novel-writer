@@ -3,7 +3,8 @@
  * 伏笔/术语/灵感/账本/时间线按项目隔离（bookDirOf 定位，工具内构造 store）。
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool, type JsonValue } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { asResult } from '../core/lorebook/service.ts'
 import type { NovelService } from '../core/novel/service.ts'
 import type { LlmClient } from '../core/llm/client.ts'

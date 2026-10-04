@@ -4,7 +4,8 @@
  * novel_guide：工坊助手意图解析入口（返回结构化动作，由用户/模型执行）。
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool, type JsonValue } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { join } from 'node:path'
 import { asResult } from '../core/lorebook/service.ts'
 import { createWizard, parseIntent, wizardCommit, wizardNext, wizardSkip, type WizardState } from '../core/guide/index.ts'

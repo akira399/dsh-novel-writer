@@ -7,7 +7,8 @@
  * 说明：分组/移动/角色卡代理等其余工具随 P1 项目模块一并注册（避免超前）。
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool, type JsonValue } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { asResult, type LoreService } from '../core/lorebook/index.ts'
 import type { CreateEntryParams, ImportParams, UpdateEntryParams } from '../core/lorebook/types.ts'
 import { jsonOutput } from './json.ts'

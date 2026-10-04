@@ -752,3 +752,45 @@
 - **原文视图热更新**（client）：DiffPreviewV 顶部原文随 `polishSuggestions` 实时渲染——已采纳段立即显示润色文并标绿（✔已采纳），新增段实时插入（＋新增），取消立即恢复。
 - 测试：diff 相关 21→**23 例**（含段落错配回归、新增段插入）；全量 303。
 **验收**：`npm run verify` 全绿（303 测试 + typecheck + build）；用户实测确认（"好多没问题了"）。
+
+## 模块 18：DSH 0.2.0-rc.2 适配（桌面版客户端迁移）
+
+**日期**：2026-10-04
+**背景**：插件 target 为 `0.1.0-rc.6`，当前 DSH Desktop 已是 `0.2.0-rc.2`（`@deepseek-ai/cordis` 4.0.4）。
+基线 typecheck：host 段 10 错误、client 段 3 个模块缺失。经实测（`cordis_inspect_query` 读实时 Slot 树 +
+从 `app.asar` 提取官方 `dsh/package.json` 得到权威依赖集）确认四处破坏性变更。
+
+**破坏点与修法**：
+
+| # | 0.1.x 用法 | 0.2.0 现状 | 本模块修法 |
+| --- | --- | --- | --- |
+| 1 | `settingsNamespace()` | 已删除（仅剩类型 `SettingsNamespace`） | 新增 `src/settings.ts` 作为唯一配置契约 |
+| 2 | `settings.register()` + `scope.get()/watch()` | `SettingsForms` 只有 `configure/describe/update/replace/mutate` | 改为 Loader 直接注入 `apply(ctx, config)`；fiber 在配置变更时重跑 apply，热生效改由常规更新生命周期承担 |
+| 3 | `JsonValue` from `dsh-tools`/`dsh-session` | 移至 `@deepseek-ai/dsh-util-values` | 7 个工具文件改导入来源 |
+| 4 | `@deepseek-ai/dsh-client-runtime` + `ctx.settingsScope` + `settings.plugin.item` | 包已不存在；slot 已移除（设置卡静默不渲染） | 客户端改用 `ctx.configForms.get(entryId)`；设置页迁至 `settings.plugins.tab`；侧边栏迁至 `sidebar.footer.action` slot（DOM 注入保留为降级） |
+
+**范围**：
+- `src/settings.ts`（新）：`Config` schema（schemastery，含默认值）+ `PLUGIN_ENTRY_ID` + `isEnabled`/`resolveDataDir` 纯函数。
+- `src/index.ts`：移除 settings 门禁 scope，直接消费注入 config；`configure({ auto: true })` 声明页面策略。
+- `src/assembly.ts`：`sync(enabled, dir)` → `sync(dir | null)`（null 即禁用），控制器不再持有 enabled 布尔量。
+- `src/client/settings-tab.tsx`（新，替代 `settings-card.tsx`）：`ConfigForm<T>` 契约（`getSnapshot/subscribe/set/unset`）+ localStorage 摸鱼开关 + 不可用时降级。
+- `src/client/index.ts`：`settings.plugins.tab` 页签 + `sidebar.footer.action` slot（占用检测失败则回退 DOM 注入）；`inject = ['slots','configForms']`。
+- `client.d.ts` / `package.json`：peers 与 `dsh.client.inject` 钉到 `0.2.0-rc.2`；版本 `0.1.8 → 0.2.0`。
+- 测试：`tests/settings.spec.ts`（10 例，含 patch 一致性）、`tests/migration-0.2.spec.ts`（7 例，含真实 evaluate 打包产物）。
+
+**验收证据**：
+- `npx tsc --noEmit`：0 错误（host）
+- `npx tsc -p tsconfig.client.json --noEmit`：0 错误（client）
+- `npx tsc -p tsconfig.build.json` + `npx tsdown`：全绿；`lib/*.js` 相对导入已改写为 `.js`（0 处残留 `.ts`）
+- `npx vitest run`：**31 文件 / 320 测试全通过**（自 303 → 320）
+- `tests/migration-0.2.spec.ts`：真实 evaluate `lib/client.js`，断言 `__ModuleLoader__.load` 的 id 与 `apply`/`inject` 导出
+
+**Code Review 结论（通过 ✅）**：
+1. ✅ 单一配置真相：`Config` schema 与 entry id 仅在 `src/settings.ts` 定义，客户端用同一 id 定位表单，并用测试钉住 `cordis.patch.yml` 的 row id 一致性（不一致会导致设置页静默失效）
+2. ✅ 失败策略：客户端 slots/configForms 缺失一律降级 + `console.warn`，绝不抛出（web shell boot 安全）
+3. ✅ 分层纪律：core/tools 除类型导入来源外未改动，业务逻辑零变更
+4. ✅ 回归保护：新增 17 例针对本次迁移的回归测试（含「不得再 import dsh-client-runtime」「不得再注册 settings.plugin.item」）
+
+**遗留事项**：
+- [ ] 未能在隔离 profile 做端到端安装验证（桌面版未暴露独立 `dsh` CLI；asar 内 `node_modules` 提取约 347MB）。建议用户在 DSH 里实装后确认设置页签与侧边栏入口。
+- [ ] `scripts/build.sh` 依赖 bash，Windows 需 Git Bash（本次以 `tsc -p tsconfig.build.json` 等价验证）。

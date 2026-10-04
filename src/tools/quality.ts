@@ -3,7 +3,8 @@
  * LLM 不可用时自动降级（规则层/检测层结果 + degraded 标记）。
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool, type JsonValue } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { asResult } from '../core/lorebook/service.ts'
 import type { NovelService } from '../core/novel/service.ts'
 import type { LlmClient } from '../core/llm/client.ts'

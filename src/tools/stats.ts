@@ -4,7 +4,8 @@
  * P1 项目模块落地后扩展 chapterNo/项目读取能力）。
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool, type JsonValue } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { checkWordTarget, countChapter } from '../core/stats/index.ts'
 import { jsonOutput } from './json.ts'
 

@@ -26,12 +26,13 @@ A web-novel creation plugin for [DeepSeek Harness](https://deepseek-harness.gith
 
 ## Install
 
-> Needs DSH installed (Windows/macOS/Linux; runtime Node ≥18). **Install only the LATEST release** (v0.1.7) — old v0.1.0/v0.1.1 fail to load with `requires options.key`.
+> Needs DSH installed (Windows/macOS/Linux; runtime Node ≥18). **This release targets DSH Desktop / CLI `0.2.0-rc.2` or newer** (`@deepseek-ai/cordis` 4.0.4).
+> The v0.1.x line targets `0.1.0-rc.6` and fails to load on 0.2.0 — see the version table below.
 
 ### A — Let an AI install it (recommended)
 Paste this to any command-capable AI:
 
-> Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer), **LATEST version only**. From `https://github.com/akira399/dsh-novel-writer/releases/latest` download the newest `dsh-external-dsh-novel-writer-*.tgz` (highest version; not v0.1.0/v0.1.1) → run `dsh plugin --profile web add <absolute tgz path>` → confirm with `dsh plugin list` → tell me to refresh the DSH page (Ctrl+Shift+R) so the sidebar entry appears. Report any error first.
+> Install the DSH plugin "大肥鱼的小说工坊" (dsh-novel-writer), **latest 0.2.x only**. From `https://github.com/akira399/dsh-novel-writer/releases/latest` download the newest `dsh-external-dsh-novel-writer-*.tgz` (highest version; not v0.1.x, which targets the old DSH) → run `dsh plugin --profile web add <absolute tgz path>` → confirm with `dsh plugin list` → tell me to refresh the DSH page (Ctrl+Shift+R). Report any error first.
 
 ### B — Manual install
 Download the newest `dsh-external-dsh-novel-writer-*.tgz` from https://github.com/akira399/dsh-novel-writer/releases/latest, then:
@@ -47,11 +48,23 @@ Needs Node ≥22 and Git:
 ```bash
 git clone https://github.com/akira399/dsh-novel-writer.git && cd dsh-novel-writer
 npm install && npm run verify && npm run build && npm pack
-dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.1.7.tgz
+dsh plugin --profile web add ./dsh-external-dsh-novel-writer-0.2.0.tgz
 ```
 (Use Git Bash on Windows for the shell build script.)
 
-**After install**: the sidebar "大肥鱼的小说工坊" entry and the settings card appear; if not, refresh/restart DSH and check the plugin is enabled.
+**After install**: the sidebar-footer "大肥鱼的小说工坊" entry and the Settings → Plugins tab appear; if not, refresh/restart DSH and check the plugin is enabled.
+
+### Version compatibility
+
+| Plugin | Target DSH | Settings namespace | Settings page |
+| --- | --- | --- | --- |
+| **0.2.0** (current) | **0.2.0-rc.2+** (cordis 4.0.4) | `dsh-novel-writer` | Settings → Plugins → tab |
+| 0.1.x (legacy) | 0.1.0-rc.6 | `dsh-novel-writer` | settings card (`settings.plugin.item`, **slot removed**) |
+
+0.2.0 adaptation: DSH removed the `@deepseek-ai/dsh-client-runtime` package, the
+`settingsNamespace()` / `settings.register()` API, and the `settings.plugin.item` slot.
+This version uses `ctx.configForms` plus the `settings.plugins.tab` and
+`sidebar.footer.action` slots.
 
 ## Quick start
 
@@ -100,9 +113,15 @@ Local-only storage; audit-logged writes; LLM helper calls reuse the session's mo
 ## Development
 
 ```bash
-npm run typecheck && npm test && npm run build
+npm run typecheck   # host + client
+npm test            # vitest (320 specs)
+npm run build       # tsc host + tsdown client (scripts/build.sh needs bash; use Git Bash on Windows)
 node scripts/simulate-1m.mjs   # million-word consistency stress test
 ```
+
+Target DSH version: **0.2.0-rc.2** (`@deepseek-ai/cordis` 4.0.4). When upgrading DSH,
+update `peerDependencies` / `devDependencies` and `dsh.client.inject`, then re-run
+`npm run verify`.
 
 Module discipline: one module → tests → review per step (see [docs/MODULE-LOG.md](./docs/MODULE-LOG.md)).
 

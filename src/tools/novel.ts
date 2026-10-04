@@ -8,7 +8,8 @@
  * （client 侧「一键写章」会话驱动在 P1-I 与 GUI 一起落地）。
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool, type JsonValue } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { asResult } from '../core/lorebook/service.ts'
 import type { NovelService } from '../core/novel/service.ts'
 import type { PhaseId } from '../core/workflow/index.ts'

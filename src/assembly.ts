@@ -43,21 +43,24 @@ export class NovelAssembly {
   }
 
   /**
-   * 幂等同步：enabled=true 且未装配 → 注册；enabled=false 且已装配 → 注销。
+   * 幂等同步：目录非空且未装配 → 注册；目录为 null（禁用）→ 注销；
    * 目录变化（且仍启用）→ 先注销再按新目录重建。
+   *
+   * 0.2.0 起配置由 Loader 直接交给 apply()，禁用即传 null，因此本控制器
+   * 不再持有 enabled 布尔量。
    */
-  sync(enabled: boolean, lorebookDir: string): void {
-    if (!enabled) {
+  sync(dir: string | null): void {
+    if (dir === null) {
       this.teardown()
       return
     }
-    if (this.disposeTools !== null && this.currentDir === lorebookDir) return
+    if (this.disposeTools !== null && this.currentDir === dir) return
     // 目录变化或首次启用：重建
     this.teardown()
-    const services = this.createServices(lorebookDir)
+    const services = this.createServices(dir)
     this.disposeTools = registerNovelTools(this.ctx, services)
     this.current = services
-    this.currentDir = lorebookDir
+    this.currentDir = dir
   }
 
   /** 注销全部（幂等）。 */

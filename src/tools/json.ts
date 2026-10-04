@@ -5,7 +5,7 @@
  * 不能标注宽类型（如 ToolOutputDefinition），否则推断退化为 never。
  */
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
-import type { JsonValue } from '@deepseek-ai/dsh-session'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 
 export function renderJson(_args: unknown, value: JsonValue): ContentBlock[] {
   return [{ type: 'text', text: JSON.stringify(value, null, 2) }]
