@@ -844,3 +844,46 @@
 **遗留事项**：
 - [ ] 仍未在真实 DSH profile 中实装验证（本机桌面版无独立 CLI）。已产出
   `dsh-external-dsh-novel-writer-0.2.0.tgz` 供实装：`dsh plugin --profile desktop add <tgz>`。
+## 模块 20：真实 DSH 实装验证 + skills 注入修复
+
+**日期**：2026-10-04
+**背景**：模块 18/19 的端到端测试都在「进程内自建服务」完成，本模块首次把插件**真正装进
+DSH Desktop 0.2.0-rc.2 的 desktop profile**（`dsh plugin add` 等价操作），因此暴露了两个
+此前测试全都漏掉的真实缺陷。
+
+**发现与修复**：
+
+1. **`skills` 未声明注入（工具全活、技能静默失效）**
+   - 现象：41 个工具全部注册可用、HTTP 路由 200、提示词库 62 条可读、dataDir/预设副作用
+     正常——但技能 `novel-writing-workflow` 查询报 `unknown or no longer available`，
+     且**现场没有任何错误日志**。
+   - 原因：`src/index.ts` 直接访问 `ctx.skills`，但导出的 `inject` 只有
+     `['tools','settings']`。0.2.0 起未声明的服务不保证在插件 fiber 上可见，
+     `ctx.skills` 为 undefined，`registerWorkflowSkill` 的 try/catch 把 TypeError
+     吞成 `ctx.logger.warn`（该 fiber 上无可见日志通道）→ 完全静默。
+   - 修法：`inject` 补 `'skills'`。
+   - 回归：新增静态断言用例——扫描 src 下所有 `ctx.<service>` 直接成员访问，
+     要求每个都在导出的 inject 中声明（`ctx.inject([...])` 局部声明者白名单除外）。
+     这类遗漏类型检查与功能测试都发现不了，必须静态钉住。
+
+2. **构建产物 assets 解析失效**（模块 19 已修，本模块在真实环境确认修复生效）
+   - 实装后 `novel_prompts` 实测返回 **62 条**提示词，确认 `resolveAssetsDir` 在
+     pnpm 安装布局（`<pkg>/lib/<dir>/` + `<pkg>/assets/`）下工作正常。
+
+**方法论教训（值得记录）**：
+进程内自建服务的「端到端」测试**不能替代真实安装**。前者由我提供 `skills` 服务，
+因此永远看不到「inject 未声明 → 服务不可见」这一类装配缺陷。真实安装是唯一能暴露
+它的手段。为定位该问题，我额外做了：从 `app.asar` 精确提取 287 个运行期包，
+用**发布的 cordis + dsh-skill 真实版本**加载**已安装的插件副本**，成功复现正确行为，
+从而把故障range 收窄到「运行中的 DSH 仍在执行旧 ESM 模块」——Node 的 ESM 缓存无法
+在进程内失效，需要重启 DSH 进程。
+
+**验收**：
+- 实装环境：41 工具 / HTTP 路由 / 62 提示词 / dataDir / 预设同步 全部确认
+- 代码契约：用 shipping runtime 加载已安装副本 → `SKILL get() -> found, len=1798`
+- host+client typecheck 0 错误；33 文件 / 332 测试全通过
+- 临时验证产物（profile 内 junction、asar 提取目录）已全部清除，profile 仅剩 pnpm 管理文件
+
+**遗留事项**：
+- [ ] **需重启 DSH 桌面进程**：旧 ESM 模块仍在运行中的 host 里缓存，插件热重载无法换掉
+  它。重启后技能应出现在技能目录中（已用 shipping runtime 逐一验证）。
