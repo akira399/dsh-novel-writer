@@ -1278,7 +1278,9 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     const el = document.createElement('div')
     el.style.cssText = [
       'position:fixed', 'top:0', 'right:0', 'bottom:0', 'width:380px',
-      'background:#fff', 'boxShadow:-4px 0 16px rgba(0,0,0,.15)',
+      'background:#fff',
+      'borderLeft:1px solid #d0d5dd',
+      'boxShadow:-4px 0 16px rgba(0,0,0,.15)',
       'zIndex:2147483647',
       'display:flex', 'flexDirection:column', 'overflow:hidden',
       'fontFamily:system-ui,sans-serif',

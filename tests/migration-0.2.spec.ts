@@ -99,6 +99,29 @@ describe('smoke — 构建产物与契约一致性', () => {
     expect(declared).toContain('skills')
   })
 
+  /**
+   * 回归：侧边栏入口的点击热区与视觉必须一致。
+   *
+   * 现场反馈：文字本身点不动，文字右侧的空白处却能点开抽屉。原因是入口打头用了
+   * `🐟` emoji——不同平台字形宽度/基线不一致，把文字挤出按钮热区。现改为固定尺寸的
+   * 内联 SVG。这里断言渲染路径里不再出现 emoji 字面量，且图标为定宽 SVG。
+   */
+  it('侧边栏入口不再使用 emoji 字形（避免 hit area 与视觉错位）', () => {
+    const src = readFileSync(join(ROOT, 'src', 'client', 'index.ts'), 'utf8')
+    // 去掉注释后再断言：注释里提到历史实现不算渲染
+    const code = src.replace(/\/\*\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(code).not.toContain('🐟')
+    expect(code).toContain("'svg'")
+    expect(code).toContain('width: 16')
+    expect(code).toContain("cursor: 'pointer'")
+    expect(code).toContain('onMouseEnter')
+  })
+
+  it('工作台抽屉带左边框（与主内容区分隔）', () => {
+    const src = readFileSync(join(ROOT, 'src', 'client', 'workshop-drawer.tsx'), 'utf8')
+    expect(src).toContain("'borderLeft:1px solid #d0d5dd'")
+  })
+
   it('构建出的 lib/client.js 是合法 ModuleLoader 单元：evaluate 后暴露 apply/inject', async () => {
     // 真正执行打包产物（含 react 依赖解析），捕捉语法/顶层求值错误。
     const { createRequire } = await import('node:module')

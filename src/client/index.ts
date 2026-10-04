@@ -11,7 +11,7 @@
  *
  * 失败策略：挂载问题只记日志、绝不抛出（web shell boot 安全）。
  */
-import React from 'react'
+import React, { useState } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
@@ -153,7 +153,10 @@ export function apply(ctx: Context): void {
       dispose = slots.inject('sidebar.footer.action', () =>
         slots.register(
           { name: 'sidebar.footer.action', id: FOOTER_ID, order: 110, label: () => '大肥鱼的小说工坊' },
-          () => React.createElement(NovelSidebarAction, { onClick: openWorkshop }),
+          // owner 只传 { wide }（false = 56px 收起栏），据此切换图标/文字形态。
+          // 参数设为可选：既能被真实 slot 渲染器传入 owner props，也满足本文件
+          // SlotsFace 的零参组件签名（运行时永远由渲染器调用）。
+          (props?: { wide?: boolean }) => React.createElement(NovelSidebarAction, { onClick: openWorkshop, wide: props?.wide }),
         ),
       )
       // slot 未声明时 inject 只挂起回调、不会真正注册；用占用者数量确认生效。
@@ -214,8 +217,20 @@ export function apply(ctx: Context): void {
   )
 }
 
-/** 侧边栏底部入口（slot 版）。 */
-function NovelSidebarAction({ onClick }: { onClick: () => void }): React.ReactNode {
+/**
+ * 侧边栏底部入口（slot 版）。
+ *
+ * 契约：`sidebar.footer.action` 的 owner props 只有 `{ wide }`（false = 56px 收起栏）。
+ * 渲染成一个**自足**的按钮，整块都是点击热区：
+ *  - 过去用 `🐟` emoji 打头：emoji 在不同平台的字形宽度/基线不一致，会把文字挤离
+ *    按钮左缘，视觉上的「文字」与实际 hit area 错位；现在改用内联 SVG 图标并固定尺寸。
+ *  - 过去没有 hover 反馈，用户不知道哪儿能点；现在整个 footer 行都有 hover/active 底色。
+ *  - 收起态只显示图标（不塞窄文字）。
+ */
+function NovelSidebarAction({ onClick, wide = true }: { onClick: () => void; wide?: boolean }): React.ReactNode {
+  const [hover, setHover] = useState(false)
+  const showLabel = wide !== false
+
   return React.createElement(
     'button',
     {
@@ -223,20 +238,58 @@ function NovelSidebarAction({ onClick }: { onClick: () => void }): React.ReactNo
       title: '大肥鱼的小说工坊',
       'aria-label': '大肥鱼的小说工坊',
       onClick,
+      onMouseEnter: () => setHover(true),
+      onMouseLeave: () => setHover(false),
+      onFocus: () => setHover(true),
+      onBlur: () => setHover(false),
       style: {
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
-        width: '100%',
-        padding: '6px 8px',
+        justifyContent: showLabel ? 'flex-start' : 'center',
+        gap: showLabel ? '8px' : 0,
+        flex: '0 0 auto',
+        // 收起时给一个正方形容器，展开时铺满 footer 行
+        width: showLabel ? '100%' : '32px',
+        height: '32px',
+        boxSizing: 'border-box',
+        padding: showLabel ? '0 8px' : 0,
+        margin: 0,
         border: 'none',
-        background: 'transparent',
+        borderRadius: '6px',
+        background: hover ? 'rgba(127,127,127,.16)' : 'transparent',
         cursor: 'pointer',
         fontSize: '13px',
+        lineHeight: '1',
         color: 'inherit',
+        font: 'inherit',
+        textAlign: 'left',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        transition: 'background-color .12s ease',
       },
     },
-    React.createElement('span', { style: { display: 'flex' } }, '🐟'),
-    React.createElement('span', null, '大肥鱼的小说工坊'),
+    React.createElement(
+      'span',
+      { style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto', width: '16px', height: '16px' } },
+      React.createElement(
+        'svg',
+        {
+          viewBox: '0 0 16 16',
+          width: 16,
+          height: 16,
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.4,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          'aria-hidden': 'true',
+        },
+        // 书本 + 笔：与「小说工坊」语义一致
+        React.createElement('path', { d: 'M2.5 3.2h6a1.8 1.8 0 0 1 1.8 1.8v7.8H4.3A1.8 1.8 0 0 1 2.5 11z' }),
+        React.createElement('path', { d: 'M10.3 5h1.4a1.8 1.8 0 0 1 1.8 1.8v6h-3.2' }),
+        React.createElement('path', { d: 'M11.9 1.6l1.4 1.4-3.1 3.1-1.8.4.4-1.8z' }),
+      ),
+    ),
+    showLabel ? React.createElement('span', { style: { overflow: 'hidden', textOverflow: 'ellipsis' } }, '大肥鱼的小说工坊') : null,
   )
 }
