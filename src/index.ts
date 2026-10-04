@@ -41,8 +41,14 @@ export { Config, PLUGIN_ENTRY_ID, PLUGIN_NAME, resolveDataDir } from './settings
 /** 稳定插件名（与 cordis.patch.yml 的 name 一致）。 */
 export const name = PLUGIN_NAME
 
-/** 宿主服务注入：工具注册需要 tools；设置页面策略需要 settings。 */
-export const inject = ['tools', 'settings']
+/**
+ * 宿主服务注入。
+ *  - `tools`：工具注册；
+ *  - `settings`：设置页面策略；
+ *  - `skills`：技能注册（0.2.0 起必须声明——不声明时 cordis 不保证该服务在插件
+ *    fiber 上可见，`ctx.skills` 会缺失，技能注册静默失败）。
+ */
+export const inject = ['tools', 'settings', 'skills']
 
 export function apply(ctx: Context, config: NovelWriterConfig = {}): void {
   // 配置驱动：enabled=false 时不注册任何工具/技能（目录传 null 即注销）。

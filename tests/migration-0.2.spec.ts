@@ -63,6 +63,42 @@ describe('smoke — 构建产物与契约一致性', () => {
     expect(code).toContain('settings.plugins.tab')
   })
 
+  /**
+   * 回归：插件里直接访问 `ctx.<服务>` 的每个服务都必须在导出的 inject 中声明。
+   *
+   * 背景：0.2.0 迁移时漏了 `skills`。缺少注入时 `ctx.skills.register` 会在
+   * try/catch 里静默失败，现象是「41 个工具全部可用，但技能注册不上」，
+   * 且现场没有任何错误日志，极难排查。此用例把该契约钉死。
+   */
+  it('host 半区：inject 覆盖所有直接访问的 ctx.<service>', () => {
+    const entry = readFileSync(join(ROOT, 'src', 'index.ts'), 'utf8')
+    const declared = (/export const inject = \[([^\]]*)\]/.exec(entry)?.[1] ?? '')
+      .split(',')
+      .map((s) => s.trim().replace(/['"]/g, ''))
+      .filter(Boolean)
+
+    // 直接成员访问 ctx.x / sctx.x / wctx.x（ctx.get('x') 属于可选读取，不在此列）
+    const used = new Set<string>()
+    for (const file of ['index.ts', 'routes.ts', 'presets.ts', 'tools/skill.ts', 'tools/index.ts']) {
+      const text = readFileSync(join(ROOT, 'src', file), 'utf8')
+      const code = text.replace(/\/\*\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+      for (const m of code.matchAll(/\b(?:ctx|sctx|wctx)\.([a-z][A-Za-z0-9_]*)/g)) {
+        used.add(m[1]!)
+      }
+    }
+    // 非服务成员白名单 + 通过 ctx.inject([...]) 局部声明的服务
+    const allow = new Set([
+      'get', 'effect', 'logger', 'inject', 'on', 'provide',
+      // routes.ts 用 ctx.inject(['webServer'], (wctx) => ...) 局部声明，故不在顶层 inject
+      'webServer',
+    ])
+    const missing = [...used].filter((name) => !allow.has(name) && !declared.includes(name))
+
+    expect(missing, 'inject 缺少: ' + missing.join(', ')).toEqual([])
+    // 技能 novel-writing-workflow 是本项目的真实依赖
+    expect(declared).toContain('skills')
+  })
+
   it('构建出的 lib/client.js 是合法 ModuleLoader 单元：evaluate 后暴露 apply/inject', async () => {
     // 真正执行打包产物（含 react 依赖解析），捕捉语法/顶层求值错误。
     const { createRequire } = await import('node:module')
