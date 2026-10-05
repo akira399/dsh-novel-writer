@@ -166,8 +166,12 @@ describe('端到端 — 构建产物布局（lib/）', () => {
 
     try {
       expect(() => built.apply(builtCtx, { enabled: true, dataDir: dir })).not.toThrow()
-      // ctx.inject 的回调在服务就绪后异步触发，给它一个微任务/宏任务窗口
-      await new Promise((resolve) => setTimeout(resolve, 20))
+      // ctx.inject 的回调在服务就绪后异步触发。
+      // 用轮询等待到稳定（固定 sleep 会 flake：lib/ 布局下首次物化更慢）。
+      const deadline = Date.now() + 2000
+      while (routes.length === 0 && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+      }
 
       const names = builtTools.schemas().map((s) => s.name)
       expect(names.length).toBeGreaterThanOrEqual(41)

@@ -930,3 +930,55 @@ DSH Desktop 0.2.0-rc.2 的 desktop profile**（`dsh plugin add` 等价操作）�
 
 **遗留事项**：
 - [ ] 后续每次改客户端 UI，都需要重启宿主进程才能让用户看到；已在 README 记录。
+## 模块 22：客户端 bundle「改了却永远看不到」的真正根因 —— 版本号来自文件时间戳
+
+**日期**：2026-10-05
+**背景**：用户连续三次反馈「没有任何改善」。此前我已确认磁盘上的 `lib/client.js` 内容正确、
+单元测试全绿、宿主也重启过，但用户浏览器里始终是旧界面。本模块找到并修掉了根因。
+
+**根因（读 `@deepseek-ai/dsh-client-modules` 源码得出）**：
+
+```js
+/** Identify an entry's build from filesystem metadata without hashing its contents. */
+function artifactRevision(baseline) {
+  return framedHash("plugin-artifact", [String(baseline.mtimeMs), String(baseline.ctimeMs), String(baseline.size)]);
+}
+```
+
+客户端 bundle 的版本号（URL 里的 `rev`）**只由 mtime / ctime / size 三个文件元数据算出，
+完全不读文件内容**。
+
+而 `npm pack` 会把打进包里的文件时间**统一归零到 1985-10-26 16:15:00**（tar 解包又保留它）。
+于是「用同一份 tarball 覆盖安装」时三个输入全都不变：
+
+```
+修复前 mtime = 1985-10-26 16:15:00.000   ← 固定值
+```
+
+→ `rev` 不变 → 客户端请求的 bundle URL 不变 → Chromium 对该 URL 的
+`immutable, max-age=31536000`（一年）缓存**持续命中旧字节**。
+宿主进程重启也没用：URL 没变，缓存照样命中。
+
+**现象为何极具迷惑性**：磁盘内容是对的、typecheck 与 336 个测试全绿、宿主确实重启了、
+甚至 `cache-control` 在桌面壳的转发层被改写成 `no-store` —— 但浏览器仍执行旧代码。
+用户看到的一直是第一版界面。
+
+**排查过程中被这一条排除掉的错误方向**（记录下来避免重蹈）：
+- 以为是 `skills` 注入/ESM 模块缓存（那个也确实是真 bug，见模块 20，已修）
+- 以为是 DOM 兜底与 slot 并存（也确实是真 bug，见模块 21，已修）
+- 以为是桌面壳的 `dsh-app://` 协议转发或 `no-store` 覆盖失效
+- 试过用 `webServer.tapIndex` 注入补丁 —— **不可行**：桌面壳的 `serveWebDocument`
+  直接读 `dsh-web-frontend/dist/index.html` 返回，根本不走 HTTP 侧 `renderIndex`，
+  所以 tapIndex 对桌面客户端无效（已回退该改动）。
+
+**修法**：
+1. 新增 `scripts/deploy.mjs`（`npm run deploy`）：构建 → 同步到 profile → **把
+   `lib/client.js` / `lib/index.js` 的 mtime 改成当前时间**，从而必然产生新的 `rev`。
+2. 部署流程文档化，避免再次踩坑。
+
+**验收**：部署后 mtime 从 `1985-10-26 16:15:00.000` 变为真实时间；
+host+client typecheck 0 错误；33 文件 / 336 测试全通过。
+
+**方法论教训**：
+「文件内容已更新」不足以证明「用户会拿到新代码」。凡是按 URL 缓存的前端产物，
+都必须确认**版本标识**（此处是文件元数据哈希）确实变化，否则一切验证都是假绿。

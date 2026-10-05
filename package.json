@@ -90,6 +90,7 @@
     "build:host": "node scripts/build.mjs",
     "build:host:bash": "bash scripts/build.sh",
     "build:client": "tsdown",
+    "deploy": "npm run build && node scripts/deploy.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.client.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
