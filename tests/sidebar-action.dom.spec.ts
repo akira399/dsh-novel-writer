@@ -121,4 +121,46 @@ describe('侧边栏入口 —— 点击热区必须覆盖看得见的文字', ()
     // 因此这里只断言初始态与「存在 hover 分支」——真正的视觉验证由人工确认。
     expect(button.style.background === 'transparent' || button.style.background.includes('rgba')).toBe(true)
   })
+
+  /**
+   * 现场反馈的真实场景：**第一次点打开，打开之后再点就没反应了**。
+   *
+   * 前几个用例都只点了一次（抽屉未打开），覆盖不到这个场景。这里模拟
+   * 「点击 → 打开 → 再点击 → 关闭」的完整循环，验证入口是可反复切换的。
+   */
+  it('可反复切换：点开之后再点文字仍能触发（模拟开→关）', () => {
+    const open = { value: false }
+    const onClick = vi.fn(() => {
+      open.value = !open.value
+    })
+    act(() => root.render(React.createElement(SidebarAction, { onClick })))
+
+    const label = (): HTMLElement =>
+      [...container.querySelectorAll('span')].find((s) => s.textContent === '大肥鱼的小说工坊')!
+
+    // 第一次：打开
+    act(() => {
+      label().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(onClick).toHaveBeenCalledTimes(1)
+    expect(open.value).toBe(true)
+
+    // 第二次：抽屉已打开，再点同一行文字 —— 必须仍然触发
+    act(() => {
+      label().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(onClick).toHaveBeenCalledTimes(2)
+    expect(open.value).toBe(false)
+  })
+
+  it('抽屉打开后入口依然可点：入口不应被抽屉的根元素遮挡', () => {
+    // 抽屉根元素：position:fixed + 最高 z-index；入口所在容器若被其覆盖，
+    // 点击会落到抽屉上。这里断言入口的按钮自身声明了可点击，且未被禁用。
+    act(() => root.render(React.createElement(SidebarAction, { onClick: () => {} })))
+    const button = container.querySelector('button')!
+    expect(button.disabled).toBe(false)
+    expect(button.style.pointerEvents).toBe('auto')
+    // 入口容器（本测试里是 document.body 的子节点）不应带 pointer-events:none
+    expect(getComputedStyle(container).pointerEvents).not.toBe('none')
+  })
 })

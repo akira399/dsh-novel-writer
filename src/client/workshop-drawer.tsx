@@ -21,6 +21,8 @@ export interface WorkshopOptions {
 
 export interface WorkshopHandle {
   toggle(): void
+  /** 幂等关闭（抽屉头部「✕ 关闭」按钮使用）。 */
+  close(): void
   dispose(): void
 }
 
@@ -661,6 +663,13 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
             title: state.expanded ? '收起为窄栏（380px）' : '展开为宽栏，内容与润色预览更清晰（自动避让聊天框条）',
             style: { ...buttonStyle, marginLeft: 'auto', fontSize: '12px', padding: '2px 8px' },
           }, state.expanded ? '⇔ 收起' : '⇔ 展开'),
+          // 常驻关闭按钮：不依赖「再点一次侧边栏入口」，避免入口被遮挡时无法收起
+          React.createElement('button', {
+            'data-action': 'close',
+            title: '关闭工作台',
+            'aria-label': '关闭工作台',
+            style: { ...buttonStyle, fontSize: '12px', padding: '2px 10px', lineHeight: '1.6' },
+          }, '✕ 关闭'),
         ),
         // 内容滚动区（唯一滚动容器；头部常驻）
         React.createElement('div', { style: { flex: '1 1 auto', overflowY: 'auto', padding: '12px 14px', minHeight: 0 } },
@@ -1196,6 +1205,9 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
         applySize()
         applySize()
         break
+      // 显式关闭：抽屉头部常驻按钮。此前只能靠再点一次侧边栏入口收起，
+        // 一旦入口被遮挡/失焦用户就没有可见的关闭途径。
+      case 'close': close(); break
       case 'lorebook': void openLorebook(); break
       case 'go-lorebook':
         // 从项目详情跳世界书，并过滤到本书栏目
@@ -1506,12 +1518,22 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     if (rootEl) rootEl.style.transform = open ? 'translateX(0)' : 'translateX(100%)'
   }
 
+  /** 幂等关闭（供抽屉内关闭按钮使用）。 */
+  const close = (): void => {
+    if (!open) return
+    open = false
+    applyOpen()
+  }
+
   return {
     toggle(): void {
       ensureMounted()
       open = !open
       applyOpen()
       applySize()
+    },
+    close(): void {
+      close()
     },    dispose(): void {
       if (undoTimer !== null) {
         clearTimeout(undoTimer)
