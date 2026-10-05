@@ -18,7 +18,6 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
 import { NovelSettingsTab } from './settings-tab.tsx'
 import { mountWorkshopDrawer, type WorkshopHandle } from './workshop-drawer.tsx'
-import { mountSidebarEntry } from './sidebar.ts'
 import { readUiHidden, subscribeUiHidden, UI_HIDDEN_KEY } from './ui-hidden.ts'
 
 /**
@@ -56,8 +55,9 @@ const FOOTER_ID = '@dsh-external/dsh-novel-writer-sidebar'
  * 排查时在侧边栏入口上「检查元素」，看 `data-nw-ui` 即可确认。
  * - v2：去掉 emoji（点击热区与视觉对齐）、加 hover 反馈、消费 owner props `wide`。
  * - v3：修掉 `font: 'inherit'` 简写覆盖 fontSize 的问题，抽屉补 border-box 描边。
+ * - v4：删除 DOM 兜底入口（它曾与 slot 同时生效，造成两个同名入口）。
  */
-const SIDEBAR_UI_VERSION = 'v3'
+const SIDEBAR_UI_VERSION = 'v4'
 
 /** 与 src/settings.ts 的 Config 对应的表单值形状。 */
 interface SettingsShape {
@@ -70,13 +70,14 @@ interface SettingsShape {
  * `ctx.slots` 的最小结构面。
  *
  * 0.2.0 把 slot 服务类型放在 `@deepseek-ai/dsh-client-ui-renderer`（渲染器包），
- * 插件不应把它当编译期依赖；这里只声明本插件真正使用的三个成员，运行时缺任何
- * 一个都会降级而不是抛出。
+ * 插件不应把它当编译期依赖；这里只声明本插件真正使用的两个成员。
+ *
+ * 注意：不要再依赖 `slots.entries`——真实服务上的方法是 `entriesOf`，
+ * 写错名字会静默返回 undefined（曾因此导致 DOM 兜底与 slot 同时生效、出现重复入口）。
  */
 interface SlotsFace {
-  register(options: Record<string, unknown>, component: () => React.ReactNode): () => void
+  register(options: Record<string, unknown>, component: (props?: { wide?: boolean }) => React.ReactNode): () => void
   inject(key: string, callback: () => () => void): () => void
-  entries?(key: string): readonly unknown[]
 }
 
 /** 取 slots 服务（不可用时 undefined）。 */
@@ -99,15 +100,6 @@ function configFormOf(ctx: Context): ConfigForm<SettingsShape> | undefined {
     return forms?.get<SettingsShape>(ENTRY_ID)
   } catch {
     return undefined
-  }
-}
-
-/** sidebar.footer.action slot 当前是否有活跃占用者。 */
-function footerSlotOccupied(slots: SlotsFace): boolean {
-  try {
-    return (slots.entries?.('sidebar.footer.action')?.length ?? 0) > 0
-  } catch {
-    return false
   }
 }
 
@@ -143,7 +135,6 @@ export function apply(ctx: Context): void {
   // ── 侧边栏入口 + 工作台抽屉 ─────────────────────────────────
   let workshop: WorkshopHandle | null = null
   let slotDisposer: (() => void) | null = null
-  let sidebarDisposer: (() => void) | null = null
 
   const ensureWorkshop = (): WorkshopHandle => {
     if (!workshop) workshop = mountWorkshopDrawer({ api: '/api/novel-writer', fenceHeader: 'x-dsh-novel-writer' })
@@ -154,46 +145,57 @@ export function apply(ctx: Context): void {
     ensureWorkshop().toggle()
   }
 
-  /** 注册 slot 入口；slot 不可用时返回 false（由调用方回退 DOM 注入）。 */
+  /**
+   * 注册侧边栏入口。
+   *
+   * 只用官方 `sidebar.footer.action` slot，**不再有 DOM 兜底**。
+   *
+   * 历史教训：0.2.0 之前靠 MutationObserver 往侧边栏 DOM 里插一行（见已删除的
+   * sidebar.ts）。迁移到 slot 后我保留它作为「非标准 web 壳」的兜底，并以
+   * `slots.entries(...)` 判断 slot 是否已生效——但运行时该方法名是 `entriesOf`，
+   * 于是判断恒为 false，**兜底与 slot 同时生效，侧边栏出现两个同名入口**；
+   * 而用户点到的恰好是带 🐟 emoji 的那个旧 DOM 行，所以「改了却看不出变化」。
+   *
+   * 现在单一来源（slot）。若 slots 服务不可用，只告警不注入 DOM——宁可不显示，
+   * 也不再制造重复入口与不可控 DOM。
+   */
   const ensureSlotEntry = (): boolean => {
     if (slotDisposer) return true
     if (!slots) return false
-    let dispose: (() => void) | null = null
     try {
-      dispose = slots.inject('sidebar.footer.action', () =>
-        slots.register(
+      slotDisposer = slots.inject('sidebar.footer.action', () =>
+        slots!.register(
           { name: 'sidebar.footer.action', id: FOOTER_ID, order: 110, label: () => '大肥鱼的小说工坊' },
           // owner 只传 { wide }（false = 56px 收起栏），据此切换图标/文字形态。
-          // 参数设为可选：既能被真实 slot 渲染器传入 owner props，也满足本文件
-          // SlotsFace 的零参组件签名（运行时永远由渲染器调用）。
+          // 参数可选：既能接住真实渲染器传入的 owner props，也满足 SlotsFace 的零参签名。
           (props?: { wide?: boolean }) => React.createElement(NovelSidebarAction, { onClick: openWorkshop, wide: props?.wide }),
         ),
       )
-      // slot 未声明时 inject 只挂起回调、不会真正注册；用占用者数量确认生效。
-      if (footerSlotOccupied(slots)) {
-        slotDisposer = dispose
-        return true
-      }
-      dispose()
+      return true
+    } catch (error) {
+      console.warn('[' + TAB_ID + '] 侧边栏入口注册失败', error)
       return false
+    }
+  }
+
+  /** 清理历史版本注入的 DOM 入口（含 MutationObserver 残留元素）。 */
+  const sweepLegacyDomEntries = (): void => {
+    try {
+      for (const el of document.querySelectorAll('[data-dsh-novel-writer-entry]')) el.remove()
     } catch {
-      dispose?.()
-      return false
+      // 无 DOM 环境忽略
     }
   }
 
   /** 按当前 uiHidden 增删侧边栏入口（幂等）。 */
   const ensureEntry = (): void => {
+    sweepLegacyDomEntries()
     if (readUiHidden()) {
       slotDisposer?.()
       slotDisposer = null
-      sidebarDisposer?.()
-      sidebarDisposer = null
       return
     }
-    // 工作台抽屉按需创建（首次点击时）
-    if (ensureSlotEntry()) return
-    if (!sidebarDisposer) sidebarDisposer = mountSidebarEntry(openWorkshop, () => ensureWorkshop())
+    ensureSlotEntry()
   }
 
   ensureEntry()
@@ -218,8 +220,7 @@ export function apply(ctx: Context): void {
       unsubForm?.()
       slotDisposer?.()
       slotDisposer = null
-      sidebarDisposer?.()
-      sidebarDisposer = null
+      sweepLegacyDomEntries()
       workshop?.dispose()
       workshop = null
     },

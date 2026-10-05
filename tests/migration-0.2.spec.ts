@@ -6,7 +6,7 @@
  * `validateArgs` / `valueSchemaSpecToJsonSchema`，把该风险钉死在 CI 里。
  */
 import { describe, expect, it } from 'vitest'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { valueSchemaSpecToJsonSchema } from '@deepseek-ai/dsh-tools'
@@ -43,7 +43,7 @@ describe('smoke — 构建产物与契约一致性', () => {
   })
 
   it('客户端半区不再 import 已删除的 @deepseek-ai/dsh-client-runtime', () => {
-    const files = ['index.ts', 'settings-tab.tsx', 'sidebar.ts', 'ui-hidden.ts']
+    const files = ['index.ts', 'settings-tab.tsx', 'ui-hidden.ts', 'workshop-drawer.tsx']
     for (const file of files) {
       const text = readFileSync(join(ROOT, 'src', 'client', file), 'utf8')
       // 只检查真实 import（注释里说明历史包名不算引用）
@@ -132,6 +132,30 @@ describe('smoke — 构建产物与契约一致性', () => {
     // 不要用 font 简写：它会重置 fontSize/lineHeight（此前导致文字尺寸不受控）
     const code = src.replace(/\/\*\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
     expect(code).not.toContain("font: 'inherit'")
+  })
+
+  /**
+   * 回归：侧边栏入口只能有一个来源（官方 slot）。
+   *
+   * 现场事故：迁移到 slot 后我保留了 DOM 注入作为兜底，并用 `slots.entries(...)`
+   * 判断 slot 是否生效——但真实服务上的方法名是 `entriesOf`。名字写错 → 判断恒为
+   * false → **兜底与 slot 同时生效，侧边栏出现两个同名入口**；用户点到的正好是
+   * 带 🐟 emoji 的那个旧 DOM 行，于是「改了代码却看不出任何变化」。
+   */
+  it('侧边栏入口不再有 DOM 兜底，也不依赖写错名字的 slots.entries', () => {
+    // DOM 注入模块必须已删除
+    expect(existsSync(join(ROOT, 'src', 'client', 'sidebar.ts'))).toBe(false)
+
+    const src = readFileSync(join(ROOT, 'src', 'client', 'index.ts'), 'utf8')
+    const code = src.replace(/\/\*\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    // 不得再调用 DOM 注入
+    expect(code).not.toContain('mountSidebarEntry')
+    // 不得使用真实服务上不存在的 entries() 方法
+    expect(code).not.toMatch(/slots\.entries\s*\(/)
+    // 唯一来源是 slot
+    expect(code).toContain("slots.inject('sidebar.footer.action'")
+    // 且必须清理历史遗留的 DOM 入口元素
+    expect(code).toContain('data-dsh-novel-writer-entry')
   })
 
   it('构建出的 lib/client.js 是合法 ModuleLoader 单元：evaluate 后暴露 apply/inject', async () => {
