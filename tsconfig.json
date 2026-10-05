@@ -17,5 +17,5 @@
     "noEmit": true
   },
   "include": ["src", "tests"],
-  "exclude": ["src/client"]
+  "exclude": ["src/client", "tests/**/*.dom.spec.ts"]
 }

@@ -303,11 +303,23 @@ A：生成后是「待确认」的条目，写入前你可编辑/删除；注入
 
 ```bash
 npm run typecheck   # host + client 双段
-npm test            # vitest（331 例）
+npm test            # vitest（336 例）
 npm run build       # tsc host + tsdown client（纯 Node，Windows 无需 bash）
+npm run deploy      # 构建并部署到本机 profile，且强制刷新 bundle 版本号
 npm run build:host:bash   # 仅当宿主固定调用 bash scripts/build.sh 时使用
 node scripts/simulate-1m.mjs   # 百万字一致性压测
 ```
+
+> ⚠️ **改了客户端界面后必须用 `npm run deploy`（或手动更新 mtime）**
+>
+> DSH 用**文件时间戳 + 大小**计算客户端 bundle 的版本号（`artifactRevision`，
+> 见 `@deepseek-ai/dsh-client-modules`），**不读文件内容**。而 `npm pack` 会把文件时间
+> 归零到 1985 年、`tar` 解包又保留它 —— 于是覆盖安装时版本号不变、URL 不变，
+> Chromium 的 `immutable, max-age=31536000` 缓存会一直返回**旧字节**，
+> 即使磁盘内容已更新、宿主已重启也一样。
+>
+> `npm run deploy` 会在拷贝后把 `lib/client.js` 的 mtime 刷新为当前时间，
+> 保证产生新的版本号；部署后需重启 DSH 才会重新计算并下发。
 
 目标 DSH 版本：**0.2.0-rc.2**（`@deepseek-ai/cordis` 4.0.4）。
 升级 DSH 时请同步 `package.json` 的 `peerDependencies` / `devDependencies` 与

@@ -4,6 +4,6 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx"
   },
-  "include": ["src/client"],
+  "include": ["src/client", "tests/**/*.dom.spec.ts"],
   "exclude": []
 }
