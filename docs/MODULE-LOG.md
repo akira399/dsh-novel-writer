@@ -887,3 +887,46 @@ DSH Desktop 0.2.0-rc.2 的 desktop profile**（`dsh plugin add` 等价操作）�
 **遗留事项**：
 - [ ] **需重启 DSH 桌面进程**：旧 ESM 模块仍在运行中的 host 里缓存，插件热重载无法换掉
   它。重启后技能应出现在技能目录中（已用 shipping runtime 逐一验证）。
+## 模块 21：客户端产物下发机制 —— 为何「改了却看不到」
+
+**日期**：2026-10-04
+**背景**：用户两次反馈「两个问题都没解决」。前两轮我改完代码、构建、覆盖安装、确认文件哈希一致，
+但用户屏幕上毫无变化。本模块查清了这类「改了却看不到」的机制原因，并纠正了我此前错误的操作指引。
+
+**关键事实（读 `app.asar` 内 Electron main + 客户端模块系统得出）**：
+
+1. **桌面客户端 = Electron 窗口 + WebContentsView 加载 web 应用**
+   `dsh-desktop-host` 通过 IPC 把 `ctx.connection.authenticatedUrl(http://127.0.0.1:<port>)` 交给
+   Electron main，后者 `view.webContents.loadURL(...)`。所以渲染的确实是一个 web 页面，
+   **但**入口是桌面客户端，用户不应被要求执行浏览器式操作。
+
+2. **客户端 bundle 按内容哈希（rev）寻址，并被宿主进程缓存**
+   插件 bundle 经 `/plugins??<id>/client.js&rev=<hash>` 组合下发，rev 由构建产物派生。
+   宿主进程启动时即固定该 rev；此后改动 `lib/client.js` 不会进入已运行的窗口——
+   **必须重启宿主进程**才能重新计算 rev。
+   本轮实测：重启前两次「修复」均未出现在用户屏幕；重启后新 bundle 才生效。
+
+3. **`Ctrl+R` / `F5` 在本应用不可靠，不应作为指引**
+   Electron 仅在 `devTools` 启用时才注册默认 reload 快捷键；本应用 `window.setMenu(null)`，
+   且「刷新页面」菜单项只在 `development` 构建中加入（`main.js`：`...development ? [{ label: reloadPageMenu, role: "reload" }] : []`）。
+   生产构建中**无条件可用**的是「重启应用与 Host」（`restartAppHostMenu`）。
+   另：应用显式支持 **F12 打开 detached DevTools**（`before-input-event` 中绑定）。
+
+4. **F12 可观测到客户端加载的到底是哪一版**
+   为此给侧边栏入口加了版本戳 `data-nw-ui`（`SIDEBAR_UI_VERSION`），后续改 UI 递增。
+   这是唯一不依赖「刷新/右键」的版本确认手段。
+
+**本轮同时确认修复生效**（重启后实测）：
+- 技能 `novel-writing-workflow` 已可加载（重启解决旧 ESM 缓存问题，验证了模块 20 的判断）
+- 客户端 bundle 已含：`data-nw-ui`、`boxSizing:border-box`、`borderLeft #d0d5dd`、
+  hover 底色、内联 SVG 图标、无 `font` 简写
+- HTTP 路由 200、62 条提示词、dataDir 副作用正常
+
+**方法论教训**：
+- 「文件已更新」≠「用户在跑新代码」。改动客户端产物后必须确认下发 rev 已变，
+  否则一切验证都是假的。
+- 给用户的验证指引必须基于**该客户端实际具有的**能力，不能套用浏览器习惯。
+  F12 可用是读代码确认的，不是假设的。
+
+**遗留事项**：
+- [ ] 后续每次改客户端 UI，都需要重启宿主进程才能让用户看到；已在 README 记录。
