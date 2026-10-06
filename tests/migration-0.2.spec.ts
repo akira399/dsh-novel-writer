@@ -117,11 +117,14 @@ describe('smoke — 构建产物与契约一致性', () => {
     expect(code).toContain('onMouseEnter')
   })
 
-  it('工作台抽屉带左边框，且用 border-box 保证描边可见', () => {
+  it('抽屉左缘有显式分隔线（不依赖根元素 1px border）', () => {
     const src = readFileSync(join(ROOT, 'src', 'client', 'workshop-drawer.tsx'), 'utf8')
-    expect(src).toContain("'borderLeft:1px solid #d0d5dd'")
-    // 关键：抽屉贴 right:0，默认 content-box 会把 1px border 推到盒子外并挤出视口
-    // → 实际表现是「加了边框却看不见」。必须同时声明 border-box。
+    // 现场结论：根元素上的 borderLeft 在真实壳里实测看不见
+    //（被裁切/被后续内联样式覆盖）。改为 React 内容里显式画一条 2px 竖线。
+    expect(src).toContain('data-nw-divider')
+    expect(src).toMatch(/width: '2px'/)
+    expect(src).toMatch(/background: '#c3cad6'/)
+    // 根元素仍须 border-box：抽屉贴 right:0，content-box 会把盒子撑出视口
     expect(src).toContain("'boxSizing:border-box'")
   })
 

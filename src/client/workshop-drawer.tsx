@@ -651,7 +651,18 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
         ? (state.detail?.book.title ?? '项目详情')
         : '大肥鱼的小说工坊'
     root.render(React.createElement(ErrorBoundary, null,
-      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' } },
+        // 左缘分隔线：显式画一条 2px 竖线，而不是依赖根元素的 1px border。
+        // 起因：根元素上的 borderLeft 在真实壳里实测看不见（被裁切/被后续内联样式覆盖），
+        // 而这条由 React 渲染的线走的是确定生效的路径（图标能更新即证明）。
+        React.createElement('div', {
+          'data-nw-divider': '',
+          'aria-hidden': 'true',
+          style: {
+            position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px',
+            background: '#c3cad6', pointerEvents: 'none', zIndex: 10,
+          },
+        }),
         // 全局固定头部：视图标题 + 展开/收起（不随内容滚动，层级高于聊天条）
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderBottom: '1px solid #eee', flex: '0 0 auto', background: '#fff' } },
           React.createElement('span', { style: { fontWeight: 700, fontSize: '14px' } }, headerTitle),
@@ -1291,11 +1302,11 @@ export function mountWorkshopDrawer(options: WorkshopOptions): WorkshopHandle {
     el.style.cssText = [
       'position:fixed', 'top:0', 'right:0', 'bottom:0', 'width:380px',
       'background:#fff',
-      // 必须 border-box：抽屉贴 right:0，默认 content-box 时 border 会让盒子总宽
-      // 超出声明的 width，左边缘（含描边）被推出视口 → 描边看不见。
+      // 保留 border-box：抽屉贴 right:0，content-box 会把盒子撑出视口。
+      // 注意：**不在这里画描边** —— 1px border 在真实壳里实测看不见
+      //（易被裁切或被后续内联样式覆盖）。分隔线改由 React 内容显式画（见 render 里的 divider）。
       'boxSizing:border-box',
-      'borderLeft:1px solid #d0d5dd',
-      'boxShadow:-4px 0 16px rgba(0,0,0,.15)',
+      'boxShadow:-8px 0 24px rgba(0,0,0,.18)',
       'zIndex:2147483647',
       'display:flex', 'flexDirection:column', 'overflow:hidden',
       'fontFamily:system-ui,sans-serif',
